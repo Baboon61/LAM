@@ -1,6 +1,6 @@
 ### A script allowing to filter out chromosomes and contigs outside the "conventional" chromosomes (chr1-19, X, Y for mouse)
 
-##########################################################################IMPORTS##########################################################################
+#########################################################################IMPORTS#########################################################################
 
 import os
 import sys
@@ -16,30 +16,30 @@ from Bio import SeqIO
 
 def usage():
 	print('Usage:')
-	print('\tpython '+sys.argv[0]+' -g <genome file> -a <number> [-s -i <info file>]')
+	print('\tpython '+sys.argv[0]+' -r <reference fasta file> -a <autosome number> [-s -i <info file>]')
 	print('\t\t-h or --help : display this help')
-	print('\t\t-g or --genomes : reference genome file')
+	print('\t\t-r or --file_reference : reference fasta file')
 	print('\t\t-a or --autosomes : number of automome in the reference genome')
 	print('\t\t-s or --sexual : remove sexual chromosomes')
 	print('\t\t-i or --info : output in file the terminal ouput')
 
 def main(argv):
 
-	genome=""
-	number_autosomes=0
-	sexual=False
-	conventional_chrom_list=[]
-	records=[]
+	file_reference = ""
+	number_autosomes = 0
+	sexual = False
+	conventional_chrom_list = []
+	records = []
 	output_file = ""
 	info_file = ""
 		
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'g:a:si:', ['genome=', 'autosomes=', 'sexual', 'info=', 'help'])
+		opts, args = getopt.getopt(sys.argv[1:], 'r:a:si:', ['file_reference=', 'autosomes=', 'sexual', 'info=', 'help'])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
 
-###################################################################################OPTIONS###################################################################################
+#########################################################################OPTIONS#########################################################################
 	
 	if not opts :
 		usage()
@@ -48,8 +48,8 @@ def main(argv):
 		if opt in ('-h', '--help'):
 			usage()
 			sys.exit(2)
-		elif opt in ('-g', '--genome'):
-			genome = arg
+		elif opt in ('-r', '--file_reference'):
+			file_reference = arg
 		elif opt in ('-a', '--autosomes'):
 			number_autosomes = arg
 		elif opt in ('-s', '--sexual'):
@@ -61,9 +61,9 @@ def main(argv):
 			usage()
 			sys.exit(2)
 
-###################################################################################CHECK UP/SET UP###################################################################################
+#########################################################################CHECK UP/SET UP#########################################################################
 
-###OPEN INFORMATION FILE IF SELECTED AS OPTION
+	#OPEN INFORMATION FILE IF SELECTED AS OPTION
 	if info_file != "":
 		if not os.path.exists(info_file):
 			info_handle = open(info_file, 'a')
@@ -72,13 +72,13 @@ def main(argv):
 			usage()
 			sys.exit(2)
 
-###CHECK GENOME FILE
-	if genome=="" or not os.path.exists(genome):
-		print("Error : You have to set a genome file !\n")
+	#CHECK REFERENCE FASTA FILE
+	if file_reference=="" or not os.path.exists(file_reference):
+		print("Error : You have to set a reference fasta file !\n")
 		usage()
 		sys.exit(2)
 
-###CHECK AUTOSOMES NUMBER
+	#CHECK AUTOSOMES NUMBER
 	try: 
 		number_autosomes = int(number_autosomes)
 	except ValueError:
@@ -91,27 +91,27 @@ def main(argv):
 		usage()
 		sys.exit(2)
 
-	output_file = '.'.join(genome.split(".")[:-1])+"_filtered."+genome.split(".")[-1]
+	output_file = '.'.join(file_reference.split(".")[:-1])+"_filtered."+file_reference.split(".")[-1]
 
-###################################################################################PRINTS###################################################################################
+#########################################################################PRINTS#########################################################################
 
 	print('\n-----------------------------------------')
-	print('Genome File : '+genome)
+	print('Reference fasta file : '+file_reference)
 	print('Autosomes : '+ str(number_autosomes))
 	if sexual:
 		print('Remove sexual chromosomes !')
 	else:
 		print('Keep sexual chromosomes')
-	print('Output Modified File : '+output_file)
+	print('Output modified file : '+output_file)
 	if info_file != "":
-		print('Output Information File : '+info_file)
+		print('Output information file : '+info_file)
 	else:
-		print('No Output Information File')
+		print('No output information file')
 	print('-----------------------------------------\n')
 
-###################################################################################PROGRAM###################################################################################
+#########################################################################PROGRAM#########################################################################
 
-###CREATE LIST OF CONVENTIONAL CHROMOSOMES
+	#CREATE LIST OF CONVENTIONAL CHROMOSOMES
 	conventional_chrom_list = [
 		"chr"+str(i+1)
 		for i in range(number_autosomes)
@@ -124,10 +124,10 @@ def main(argv):
 		for i in conventional_chrom_list:
 			info_handle.write(i+"\n")
 
-###FILTER OUT CHROMOSOMES NOT IN CONVENTIONAL CHROMOSOME LIST
+	#FILTER OUT CHROMOSOMES NOT IN CONVENTIONAL CHROMOSOME LIST
 	records = [
 		record
-		for record in SeqIO.parse(genome, 'fasta')
+		for record in SeqIO.parse(file_reference, 'fasta')
 		if record.id in conventional_chrom_list
 	]
 	SeqIO.write(records, output_file, "fasta")

@@ -16,18 +16,18 @@ import pandas as pd
 ##########
 ###LIST###
 ##########
-###If you want to list the chromosomes in your file, with their length
+###If you want to list the chromosomes of your fasta file, with their length
 ###python lookmod_genome.py -m list -f file.fasta
 
 ##########
 ###LOOK###
 ##########
-###If you want to look at a spot with 10 bases before and after (between 12 and 22) where you want to insert a sequence you can write
-###python lookmod_genome.py -m look -f file.fasta -p 'chr1:12:22' -l 10
+###If you want to look at the surroundings spot of 9 bases let's say between 12 and 22 on chr1, where you want to insert a sequence, you can write
+###python lookmod_genome.py -m look -f file.fasta -p 'chr1:12:22' -s 10
 ###You will get the following area 12-9, so 3, to 22+9, so 31
 ###from3to12**from22to31
 
-#########################################################################INTERACT#########################################################################
+#########################################################################MODIFY#########################################################################
 
 ###For the next mode, you will need a fasta file with the modifications you want
 ###Then, launch this command
@@ -57,7 +57,7 @@ import pandas as pd
 ###>add:your_chromosome_name
 ###GTCGATCGTCATGGTT
 ###------REMOVE------
-###If you want to remove a new chromosome, you will need to create a header like this
+###If you want to remove a chromosome from the reference genome, you will need to create a header like this
 ###>remove:your_chromosome_name
 ###INFO : No sequence needed for deletion
 
@@ -67,36 +67,37 @@ import pandas as pd
 ###Use ":" to separate your entities
 
 
-
 def usage():
 	print('Usage:')
-	print('\tpython '+sys.argv[0]+' -m <mode : list, look, modify> -f <genome fasta file> -c <changes file> -p <position> [-i <info file>]')
+	print('\tpython '+sys.argv[0]+' -m <mode : list, look, modify> -g <genome type> -r <reference fasta file> -c <construction fasta file> -p <position> -s <surroundings length> [-i <info file>]')
 	print('\t\t-h or --help : display this help')
 	print('\t\t-m or --mode : list, look, modify')
-	print('\t\t-f or --fasta : genome fasta file')
-	print('\t\t-c or --change : changes file (if mode is modify)')
+	print('\t\t-g or --genome : genome type')
+	print('\t\t-r or --file_reference : reference fasta file')
+	print('\t\t-c or --file_construction : construction fasta file (if mode is modify)')
 	print('\t\t-p or --position : position chrmX:start:end (if mode is look)')
-	print('\t\t-l or --length : position (default : 10) (if mode is look)')
+	print('\t\t-s or --surroundings : position (default : 10) (if mode is look)')
 	print('\t\t-i or --info : output in file the terminal ouput')
 
 def main(argv):
 
 	mode = ""
-	file_fasta = ""
-	changes_file = ""
+	genome = ""
+	file_reference = ""
+	file_construction = ""
 	position = ""
-	full_seq=""
-	length=10
-	chrom_dict={}
+	full_seq = ""
+	surroundings = 10
+	chrom_dict = {}
 	info_file = ""
 		
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'm:f:c:p:l:i:', ['mode=', 'fasta=', 'change=', 'position=', 'length=', 'info=', 'help'])
+		opts, args = getopt.getopt(sys.argv[1:], 'm:g:r:c:p:s:i:', ['mode=', 'genome=', 'file_reference=', 'file_construction=', 'position=', 'surroundings=', 'info=', 'help'])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
 
-###################################################################################OPTIONS###################################################################################
+#########################################################################OPTIONS#########################################################################
 
 	if not opts :
 		usage()
@@ -107,14 +108,16 @@ def main(argv):
 			sys.exit(2)
 		elif opt in ('-m', '--mode'):
 			mode = arg
-		elif opt in ('-f', '--fasta'):
-			file_fasta = arg
-		elif opt in ('-c', '--change'):
-			changes_file = arg
+		elif opt in ('-g', '--genome'):
+			genome = arg
+		elif opt in ('-r', '--file_reference'):
+			file_reference = arg
+		elif opt in ('-c', '--file_construction'):
+			file_construction = arg
 		elif opt in ('-p', '--position'):
 			position = arg
-		elif opt in ('-l', '--length'):
-			length = int(arg)
+		elif opt in ('-s', '--surroundings'):
+			surroundings = int(arg)
 		elif opt in ('-i', '--info'):
 			info_file = arg
 		else:
@@ -122,7 +125,7 @@ def main(argv):
 			usage()
 			sys.exit(2)
 
-###OPEN INFORMATION FILE IF SELECTED AS OPTION
+	#OPEN INFORMATION FILE IF SELECTED AS OPTION
 	if info_file != "":
 		if not os.path.exists(info_file):
 			info_handle = open(info_file, 'a')
@@ -130,39 +133,45 @@ def main(argv):
 			print("Error : This info file already exist !\n")
 			usage()
 			sys.exit(2)
-###CHOOSE A MODE	
+	#CHOOSE A MODE	
 	if mode!="list" and mode!="modify" and mode!="look":
 		print("Error : You have to choose a mode : list, look or modify !\n")
 		usage()
 		sys.exit(2)
 
-###CHECK THE REFERENCE FASTA FILE
-	if (file_fasta[-3:]!=".fa" and file_fasta[-4:]!=".fna" and file_fasta[-6:]!=".fasta") or not os.path.exists(file_fasta):
+	#CHECK THE REFERENCE FASTA FILE
+	if (file_reference[-3:]!=".fa" and file_reference[-4:]!=".fna" and file_reference[-6:]!=".fasta") or not os.path.exists(file_reference):
 		print("Error : The reference fasta file is missing, not .fa, .fna or .fasta !\n")
 		usage()
 		sys.exit(2)
-###DICTIONNARY ALL CHROMOSOMES AND LENGTHS
+	#DICTIONNARY ALL CHROMOSOMES AND LENGTHS
 	else:
 		chrom_dict = {
 			record.id: len(record.seq)
-			for record in SeqIO.parse(file_fasta, 'fasta')
+			for record in SeqIO.parse(file_reference, 'fasta')
 			if record.id not in chrom_dict
 		}
 
-###################################################################################CHECK###################################################################################
+#########################################################################CHECK UP/SET UP#########################################################################
 
-###CHECK FOR MODIFY MODE
+	#CHECK FOR MODIFY MODE
 	if mode=="modify":
-		if (changes_file[-3:]!=".fa" and changes_file[-4:]!=".fna" and changes_file[-6:]!=".fasta") or not os.path.exists(changes_file):
-			print("Error : The changes file is missing, not .fa, .fna or .fasta !\n")
+		if (file_construction[-3:]!=".fa" and file_construction[-4:]!=".fna" and file_construction[-6:]!=".fasta") or not os.path.exists(file_construction):
+			print("Error : The construction file is missing, not .fa, .fna or .fasta !\n")
 			usage()
 			sys.exit(2)
-###CHECK FOR LOOK MODE
+		if genome == "":
+			print("Error : The genome type is missing !\n")
+			usage()
+			sys.exit(2)
+	#CHECK FOR LOOK MODE
 	elif mode=="look":
-		if length < 1 or length > 2000:
-			print("Error : length has to be between 1 and 100 !\n")
+		#NOT MORE THAN 1000 FOR SURROUNDINGS
+		if surroundings < 1 or surroundings > 1000:
+			print("Error : Surroundings length has to be between 1 and 1000 !\n")
 			usage()
 			sys.exit(2)
+		#CHECK CORRECT POSITION
 		if position!="":
 			if len(position.split(":")) == 3 :
 				chrom=position.split(":")[0]
@@ -200,27 +209,28 @@ def main(argv):
 			usage()
 			sys.exit(2)
 
-	output_rename = file_fasta[:-3]+"_modified"+".fa"
+	#SET UP OUTPUT FILE
+	output_rename = genome+".fa"
 
-###################################################################################PRINTS###################################################################################
+#########################################################################PRINTS#########################################################################
 
 	print('\n-----------------------------------------')
 	print('Mode : '+mode)
-	print('fasta file : '+file_fasta)
+	print('Fasta file : '+file_reference)
 	if mode=="modify":
-		print('change file : '+changes_file)
+		print('Construction file : '+file_construction)
 	if mode=="look":
-		print('position : '+position)
-		print('length : '+str(length))
+		print('Position : '+position)
+		print('Surroundings length : '+str(surroundings))
 	if mode=="modify":
 		print('Output file rename: '+output_rename)
 	if info_file != "":
-		print('Output Information File : '+info_file)
+		print('Output information File : '+info_file)
 	print('-----------------------------------------\n')
 
-###################################################################################PROGRAM###################################################################################
+#########################################################################PROGRAM#########################################################################
 
-### LIST MODE
+	#LIST MODE
 	if mode=="list":
 		print("----------------------")
 		print("------   LIST   ------")
@@ -230,32 +240,35 @@ def main(argv):
 			if info_file != "":
 				info_handle.write(key+"\t"+str(value)+"\n")
 
-### LOOK MODE
+	#LOOK MODE
 	elif mode=="look":
-		for record in SeqIO.parse(file_fasta, 'fasta'):
+		for record in SeqIO.parse(file_reference, 'fasta'):
+			#CHECK IF CHROM IN REFERENCE FASTA FILE
 			if chrom == record.id:
+				#CHECK POSITIONS
 				if start > len(record.seq):
-					print("Error : start is bigger than the reference sequence length, please use this pattern 'chrX:start:end' !\n")
+					print("Error : Start is bigger than the reference sequence length, please use this pattern 'chrX:start:end' !\n")
 					usage()
 					sys.exit(2)
+				#RETRIEVE SEQUENCE
 				if end > len(record.seq):
-					print("Warning : end is bigger than the reference sequence length, only start will be shown' !\n")
-					if start<length:
+					print("Warning : End is bigger than the reference sequence length, only start will be shown' !\n")
+					if start<surroundings:
 						full_seq+=record.seq[0:start]+"**"
 					else:
-						full_seq+=record.seq[start-length:start]+"**"
-
+						full_seq+=record.seq[start-surroundings:start]+"**"
+			
 				else:
-					if start<length:
+					if start<surroundings:
 						full_seq+=record.seq[0:start]+"**"
 					else:
-						full_seq+=record.seq[start-length:start]+"**"
+						full_seq+=record.seq[start-surroundings:start]+"**"
 
-					if len(record.seq)-end<length:
+					if len(record.seq)-end<surroundings:
 						full_seq+=record.seq[end-1:len(record.seq)]
 					else:
 					
-						full_seq+=record.seq[end-1:end-1+length]
+						full_seq+=record.seq[end-1:end-1+surroundings]
 		print("----------------------")
 		print("------   LOOK   ------")
 		print("----------------------")
@@ -263,24 +276,26 @@ def main(argv):
 		if info_file != "":
 			info_handle.write(str(full_seq))
 
-### MODIFY MODE
+	#MODIFY MODE
 	elif mode=="modify":
 		removed_list=[]
 		added_dict={}
-		df_file=pd.DataFrame(columns=["chr", "modif_type", "length", "start", "end", "seq"])
+		#INITIALIZE DATAFRAME
+		df_construction=pd.DataFrame(columns=["chr", "modif_type", "length", "start", "end", "seq"])
 
 		if info_file != "":
 			orig_stdout = sys.stdout
 			sys.stdout = info_handle
 
 
-	###FILTER CHANGES_FILE, KEEP GOOD DELETION AND INSERTION. DISPATCH ADD AND REMOVE IN LIST
-		for record in SeqIO.parse(changes_file, 'fasta'):
+		#FILTER FILE_CONSTRUCTION, KEEP GOOD DELETION AND INSERTION. DISPATCH ADD AND REMOVE IN LIST
+		for record in SeqIO.parse(file_construction, 'fasta'):
 			modif_type=""
 			chrom=""
 			start=0
 			end=0
 			check_good=True
+			#DISPATCH ADD AND REMOVE
 			if len(record.id.split(":")) == 2:
 				check_good=False
 				if record.id.split(":")[0] == "add":
@@ -288,7 +303,7 @@ def main(argv):
 						added_dict[record.id.split(":")[1]]=record.seq
 				elif record.id.split(":")[0] == "remove":
 					removed_list.append(record.id.split(":")[1])
-				
+			#CHECK GOOD DELETION AND INSERTION
 			elif len(record.id.split(":")) == 4:
 				modif_type=record.id.split(":")[0]
 				chrom=record.id.split(":")[1]
@@ -338,8 +353,9 @@ def main(argv):
 				print("Warning : To add or remove use modif_type:chrmX !")
 				print("Warning : {"+record.id+"} will not be used")
 
+			#IF CONSTRUCTION TYPE IS OK
 			if check_good:
-	###FOR INSERTION DO THE FOLLOWING			
+				#FOR INSERTION DO THE FOLLOWING			
 				if modif_type == "insertion":
 					if start == end:
 						print("Warning : {"+record.id+"} can not insert between "+str(start)+" and "+str(end)+" !")
@@ -356,8 +372,8 @@ def main(argv):
 							start=chrom_dict[chrom]
 							end=chrom_dict[chrom]+1
 
-					df_file = df_file.append(pd.Series([chrom, modif_type, len(record.seq)-(end-start-1), start, end, str(record.seq)], index=["chr", "modif_type", "length", "start", "end", "seq"]), ignore_index=True)
-	###FOR DELETION DO THE FOLLOWING
+					df_construction = df_construction.append(pd.Series([chrom, modif_type, len(record.seq)-(end-start-1), start, end, str(record.seq)], index=["chr", "modif_type", "length", "start", "end", "seq"]), ignore_index=True)
+				#FOR DELETION DO THE FOLLOWING
 				elif modif_type == "deletion":
 					if start == end or start == end-1:
 						print("Warning : {"+record.id+"} can not delete between "+str(start)+" and "+str(end)+", nothing to delete !")
@@ -370,7 +386,7 @@ def main(argv):
 							print("Warning : {"+record.id+"} deletion from "+str(start)+" to the end !")
 							end=chrom_dict[chrom]+1
 
-						df_file = df_file.append(pd.Series([chrom, modif_type, -(end-start-1), start, end, ""], index=["chr", "modif_type", "length", "start", "end", "seq"]), ignore_index=True)
+						df_construction = df_construction.append(pd.Series([chrom, modif_type, -(end-start-1), start, end, ""], index=["chr", "modif_type", "length", "start", "end", "seq"]), ignore_index=True)
 				else:
 					print("Warning : {"+record.id+"} does not have the good format")
 					print("Warning : To delete or insert use modif_type:chrmX:start:end !")
@@ -378,21 +394,21 @@ def main(argv):
 					print("Warning : {"+record.id+"} will not be used")
 					sys.exit()
 
-	###SORT DATAFRAME
-		df_file = df_file.sort_values(by=['chr', 'start', 'end'], ascending=[1, 1, 1])
+		#SORT DATAFRAME
+		df_construction = df_construction.sort_values(by=['chr', 'start', 'end'], ascending=[1, 1, 1])
 
 		pd.options.mode.chained_assignment = None
 
-		#print(df_file)
+		#print(df_construction)
 
 		records=[]
-	###MODIFY EACH RECORD WITH THE DATAFRAME, DO NOT OUTPUT THE REMOVED CHROMOSOME
-		for record in SeqIO.parse(file_fasta, 'fasta'):
-			###if the record is not in the deleted list
-			#print("Normal")
-			#print(record.seq)
+
+		#MODIFY EACH RECORD ACCORDING TO THE DATAFRAME, DO NOT OUTPUT THE REMOVED CHROMOSOME
+		for record in SeqIO.parse(file_reference, 'fasta'):
+			#RECORD NOT IN REMOVED LIST
 			if record.id not in removed_list:
-				df_temp = df_file.loc[df_file['chr'] == record.id]
+				#SUBSTRACT CONSTRCUTION DATAFRAME
+				df_temp = df_construction.loc[df_construction['chr'] == record.id]
 				for index, row in df_temp.iterrows():
 					if row['modif_type']=='deletion':
 						record.seq=record.seq[:row['start']]+record.seq[row['end']-1:]
@@ -408,9 +424,11 @@ def main(argv):
 					df_temp.end = df_temp.end + row['length']
 				records.append(record)
 			
-
+		#ADD ADDED CHROMOSOME TO RECORDS
 		for key, value in added_dict.iteritems():
 			records.append(SeqRecord(Seq(str(value),IUPAC.unambiguous_dna), id = key, description = key, name = key))
+
+		#OUTPUT RECORDS
 		SeqIO.write(records, output_rename, "fasta")
 
 		sys.stdout = orig_stdout

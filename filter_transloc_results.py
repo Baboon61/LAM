@@ -21,7 +21,7 @@ import pandas as pd
 
 def usage():
     print('Usage:')
-    print('\tpython ' + sys.argv[0] + ' -f <metadata file> -t <results directory> -o <output mark> -g <genome type> [-i <input mark> --unaligned <value> --baitonly <value> --uncut <value> --misprimed <value> --freqcut <value> --largegap <value> --mapqual <value> --breaksite <value> --sequential <value> --repeatseq <value> --duplicate <value>]')
+    print('\tpython ' + sys.argv[0] + ' -m <metadata file> -t <results directory> -o <output mark> -g <genome type> [-i <input mark> --unaligned <value> --baitonly <value> --uncut <value> --misprimed <value> --freqcut <value> --largegap <value> --mapqual <value> --breaksite <value> --sequential <value> --repeatseq <value> --duplicate <value>]')
     print('\t\t-h or --help : display this help')
     print('\t\t-m or --file_metadata : metadata file')
     print('\t\t-t or --dir_results : results directory')

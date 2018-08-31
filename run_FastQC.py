@@ -95,25 +95,25 @@ def main(argv):
     metadata = pd.read_table(file_metadata, sep='\t')
 
     # LOOP OVER EACH LIBRARIES
-    for i in metadata['Library'].tolist():
-        if not os.path.exists(dir_prep + i + "_R1.fq.gz"):
+    for library in metadata['Library'].tolist():
+        if not os.path.exists(dir_prep + library + "_R1.fq.gz"):
             print("Warning : " + dir_prep +
-                  " does not contains {" + i + "_R1.fq.gz}")
-            print("Warning :  {" + i + "} will not be filtered")
-        elif not os.path.exists(dir_prep + i + "_R2.fq.gz"):
+                  " does not contains {" + library + "_R1.fq.gz}")
+            print("Warning :  {" + library + "} will not be filtered")
+        elif not os.path.exists(dir_prep + library + "_R2.fq.gz"):
             print("Warning : " + dir_prep +
-                  " does not contains {" + i + "_R2.fq.gz}")
-            print("Warning :  {" + i + "} will not be filtered")
+                  " does not contains {" + library + "_R2.fq.gz}")
+            print("Warning :  {" + library + "} will not be filtered")
         else:
             # CREATE THE COMMAND LINE
-            command_line = "fastqc " + dir_prep + i + \
-                "_R1.fq.gz " + dir_prep + i + "_R2.fq.gz "
+            command_line = "fastqc " + dir_prep + library + \
+                "_R1.fq.gz " + dir_prep + library + "_R2.fq.gz "
             print(command_line)
             os.system(command_line)
-            command_line = "mv " + dir_prep + i + "_R1_fastqc.* " + dir_output
+            command_line = "mv " + dir_prep + library + "_R1_fastqc.* " + dir_output
             print(command_line)
             os.system(command_line)
-            command_line = "mv " + dir_prep + i + "_R2_fastqc.* " + dir_output
+            command_line = "mv " + dir_prep + library + "_R2_fastqc.* " + dir_output
             print(command_line)
             os.system(command_line)
 

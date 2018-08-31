@@ -73,7 +73,7 @@ def main(argv):
         elif opt in ('-m', '--file_metadata'):
             file_metadata = arg
         elif opt in ('-t', '--dir_results'):
-            directory_path = arg
+            dir_results = arg
         elif opt in ('-o', '--output_mark'):
             output_mark = arg
         elif opt in ('-g', '--genome'):
@@ -182,25 +182,25 @@ def main(argv):
 ##############################PROGRAM##############################
 
     # LOOP OVER EACH LIBRARIES
-    for i in metadata['Library'].tolist():
+    for library in metadata['Library'].tolist():
         # CHECK DIRECTORY EXISTS
-        if not os.path.exists(dir_results + i):
+        if not os.path.exists(dir_results + library):
             print("Warning : " + dir_results +
                   " does not contains {" + i + "}")
-            print("Warning :  {" + i + "} will not be filtered")
+            print("Warning :  {" + library + "} will not be filtered")
         else:
             # CHECK INPUT FILE EXISTS
-            if os.path.exists(directory_path + i + "/" + i + file_input_extension):
+            if os.path.exists(dir_results + library + "/" + library + file_input_extension):
                 # CREATE THE COMMAND LINE
-                command_line = "TranslocFilter.pl " + dir_results + i + "/" + i + file_input_extension + " " + \
-                    dir_results + i + "/" + i + file_output_extension + \
+                command_line = "TranslocFilter.pl " + dir_results + library + "/" + library + file_input_extension + " " + \
+                    dir_results + library + "/" + library + file_output_extension + \
                     " --filters " + "'" + options_line[1:] + "'"
                 print(command_line)
                 os.system(command_line)
             else:
-                print("Warning : " + dir_results + i + "/" + i +
+                print("Warning : " + dir_results + library + "/" + library +
                       file_input_extension + " does not exist")
-                print("Warning :  {" + dir_results + i + "/" + i +
+                print("Warning :  {" + dir_results + library + "/" + library +
                       file_input_extension + "} will not be filtered")
 
 if __name__ == '__main__':

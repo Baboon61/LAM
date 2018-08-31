@@ -28,7 +28,6 @@ def usage():
     print('\t\t-i or --input_mark : marks from input file')
 
 
-
 def main(argv):
 
     file_metadata = ""
@@ -53,9 +52,9 @@ def main(argv):
         if opt in ('-h', '--help'):
             usage()
             sys.exit(2)
-        elif opt in ('-f', '--file_metadata'):
+        elif opt in ('-m', '--file_metadata'):
             file_metadata = arg
-        elif opt in ('-d', '--dir_results'):
+        elif opt in ('-t', '--dir_results'):
             dir_results = arg
         elif opt in ('-o', '--output_mark'):
             output_mark = arg
@@ -63,7 +62,7 @@ def main(argv):
             genome = arg
         elif opt in ('-c', '--file_construction'):
             file_construction = arg
-        elif opt in ('-n', '--input_mark'):
+        elif opt in ('-i', '--input_mark'):
             input_mark = arg
 
         else:
@@ -254,19 +253,20 @@ def main(argv):
 ##############################PROGRAM##############################
 
     # LOOP OVER EACH LIBRARIES
-    for i in metadata['Library'].tolist():
+    for library in metadata['Library'].tolist():
+        print(library)
         # CHECK RESULTS DIRECTORY EXISTS
-        if not os.path.exists(dir_results + i):
+        if not os.path.exists(dir_results + library):
             print("Warning : " + dir_results +
-                  " does not contains {" + i + "}")
-            print("Warning :  {" + i + "} will not be filtered")
+                  " does not contains {" + library + "}")
+            print("Warning :  {" + library + "} will not be filtered")
         else:
             # CHECK INPUT FILE EXISTS
-            if os.path.exists(directory_path + i + "/" + i + file_input_extension):
-                file_output = open(directory_path + i + "/" +
-                                   i + file_output_extension, 'a')
+            if os.path.exists(dir_results + library + "/" + library + file_input_extension):
+                file_output = open(dir_results + library + "/" +
+                                   library + file_output_extension, 'a')
                 dataframe_input = pd.read_table(
-                    directory_path + i + "/" + i + file_input_extension, sep='\t')
+                    dir_results + library + "/" + library + file_input_extension, sep='\t')
                 file_output.write("\t".join(list(dataframe_input)) + "\n")
                 for index, row in dataframe_input.iterrows():
                     # IF MAPQUAL
@@ -280,9 +280,9 @@ def main(argv):
                             file_output, sep='\t', header=None, index=False)
 
             else:
-                print("Warning : " + dir_results + i + "/" + i +
+                print("Warning : " + dir_results + library + "/" + library +
                       file_input_extension + " does not exist")
-                print("Warning :  {" + dir_results + i + "/" + i +
+                print("Warning :  {" + dir_results + library + "/" + library +
                       file_input_extension + "} will not be filtered")
 
 if __name__ == '__main__':

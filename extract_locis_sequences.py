@@ -1,4 +1,4 @@
-### A script allowing to extract sequences from Legitime files according to their locus
+### A script allowing to extract sequences from Legitimate files according to their locus
 
 ##########################################################################IMPORTS##########################################################################
 
@@ -144,7 +144,7 @@ def main(argv):
 ###TEST IF INPUT EXIST IN AT LEAST ON LIBRARY
 	check_inputMark = False
 	for library in metadata['Library'].tolist():	
-		if os.path.exists(path_pos_directory+library+"/"+library+"_Legitime"+file_input_extension):
+		if os.path.exists(path_pos_directory+library+"/"+library+"_Legitimate"+file_input_extension):
 			check_inputMark = True
 	if not check_inputMark:
 		print("Error : Your input marks can not localize a good input file !\n")
@@ -181,20 +181,20 @@ def main(argv):
 			print("Warning :  {"+library+"} will not be filtered")
 		else:
 			###CHECK INPUT FILE EXISTS
-			if os.path.exists(path_pos_directory+library+"/"+library+"_Legitime"+file_input_extension):
-				df_legitime = pd.read_csv(path_pos_directory+library+"/"+library+"_Legitime"+file_input_extension, sep='\t', header=0, index_col=None)
-				df_legitime = df_legitime[['Qname','Locus Type','Position Type','Seq']]
-				df_legitime = df_legitime[df_legitime['Position Type']=="Inside"]
+			if os.path.exists(path_pos_directory+library+"/"+library+"_Legitimate"+file_input_extension):
+				df_legitimate = pd.read_csv(path_pos_directory+library+"/"+library+"_Legitimate"+file_input_extension, sep='\t', header=0, index_col=None)
+				df_legitimate = df_legitimate[['Qname','Locus Type','Position Type','Seq']]
+				df_legitimate = df_legitimate[df_legitimate['Position Type']=="Inside"]
 
 			else:
-				print("Error : The Legitime file for "+library+" is missing !\n")
+				print("Error : The Legitimate file for "+library+" is missing !\n")
 				usage()
 				sys.exit(2)
 
 			for index_locus, row_locus in df_locus.iterrows():
-				print("-->"+row_locus[4]+" : "+str(len(df_legitime[df_legitime['Locus Type']==row_locus[4]])))
+				print("-->"+row_locus[4]+" : "+str(len(df_legitimate[df_legitimate['Locus Type']==row_locus[4]])))
 				f = open(path_pos_directory+library+"/"+library+"_"+row_locus[4].replace("/","-").replace(" ","+").replace("'","!")+file_output_extension, 'a')
-				for index, row in df_legitime[df_legitime['Locus Type']==row_locus[4]].iterrows():
+				for index, row in df_legitimate[df_legitimate['Locus Type']==row_locus[4]].iterrows():
 					f.write(">"+row['Qname']+"\n"+row['Seq']+"\n")
 
 if __name__ =='__main__':

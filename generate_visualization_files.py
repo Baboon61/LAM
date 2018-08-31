@@ -25,7 +25,7 @@ def usage():
 	print('\t\t-k or --pos_directory : postprocess directory')
 	print('\t\t-m or --outputMark : mark added to the output file')
 	print('\t\t-g or --genome : only filter librairies results with this genome')
-	print('\t\t-z or --size_pool : the number of bases between two junctions to pool them for illegitime junctions (Default : 100)')
+	print('\t\t-z or --size_pool : the number of bases between two junctions to pool them for illegitimate junctions (Default : 100)')
 	print('\t\t-p or --percent : percentage of translocation insane a size_pool to be display as link on Circos plot (Default : 2.0)')
 	print('\t\t-b or --bin_size : size of bins to create histogram on Circos plot (Default : 5000000)')
 	print('\t\t-n or --inputMark : marks from input file')
@@ -175,10 +175,10 @@ def main(argv):
 	###TEST IF INPUT EXIST IN AT LEAST ON LIBRARY
 	check_inputMark = False
 	for library in metadata['Library'].tolist():	
-		if os.path.exists(path_pos_directory+library+"/"+library+"_Legitime"+file_input_extension) or os.path.exists(path_pos_directory+library+"/"+library+"_Illegitime"+file_input_extension):
+		if os.path.exists(path_pos_directory+library+"/"+library+"_Legitimate"+file_input_extension) or os.path.exists(path_pos_directory+library+"/"+library+"_Illegitimate"+file_input_extension):
 			check_inputMark = True
 	if not check_inputMark:
-		print("Error : Your input marks can not localize a good legitime or illegitime file !\n")
+		print("Error : Your input marks can not localize a good legitimate or illegitimate file !\n")
 		usage()
 		sys.exit(2)
 
@@ -213,26 +213,26 @@ def main(argv):
 			print("Warning :  {"+library+"} will not be filtered")
 		else:
 			###CHECK INPUT FILE EXISTS
-			if os.path.exists(path_pos_directory+library+"/"+library+"_Legitime"+file_input_extension):
-				df_legitime = pd.read_csv(path_pos_directory+library+"/"+library+"_Legitime"+file_input_extension, sep='\t', header=0, index_col=None)
-				df_legitime = df_legitime.drop(columns=df_legitime.columns[11:])
+			if os.path.exists(path_pos_directory+library+"/"+library+"_Legitimate"+file_input_extension):
+				df_legitimate = pd.read_csv(path_pos_directory+library+"/"+library+"_Legitimate"+file_input_extension, sep='\t', header=0, index_col=None)
+				df_legitimate = df_legitimate.drop(columns=df_legitimate.columns[11:])
 
 			else:
-				print("Error : The Legitime file for "+library+" is missing !\n")
+				print("Error : The Legitimate file for "+library+" is missing !\n")
 				usage()
 				sys.exit(2)
 
-			if os.path.exists(path_pos_directory+library+"/"+library+"_Illegitime"+file_input_extension):
-				df_illegitime = pd.read_csv(path_pos_directory+library+"/"+library+"_Illegitime"+file_input_extension, sep='\t', header=0, index_col=None)
-				df_illegitime = df_illegitime.drop(columns=df_illegitime.columns[11:])
+			if os.path.exists(path_pos_directory+library+"/"+library+"_Illegitimate"+file_input_extension):
+				df_illegitimate = pd.read_csv(path_pos_directory+library+"/"+library+"_Illegitimate"+file_input_extension, sep='\t', header=0, index_col=None)
+				df_illegitimate = df_illegitimate.drop(columns=df_illegitimate.columns[11:])
 
 			else:
-				print("Error : The Illegitime file for "+library+" is missing !\n")
+				print("Error : The Illegitimate file for "+library+" is missing !\n")
 				usage()
 				sys.exit(2)
 
 			###MERGE DATAFRAMES
-			df = pd.concat([df_legitime, df_illegitime], ignore_index=True)
+			df = pd.concat([df_legitimate, df_illegitimate], ignore_index=True)
 			df = df.sort_values(['Rname', 'Junction'], ascending=[True, True])
 
 	

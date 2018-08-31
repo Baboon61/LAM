@@ -1,4 +1,4 @@
-### A script allowing to split junctions to legitime, illegitime or trash junctions. Also, able to categorize legitime junctions to different input locis, group illegitimate junctions to pool in order to find repeat locis and gene location close to this pool.
+### A script allowing to split junctions to legitimate, illegitimate or trash junctions. Also, able to categorize legitimate junctions to different input locis, group illegitimate junctions to pool in order to find repeat locis and gene location close to this pool.
 
 ##########################################################################IMPORTS##########################################################################
 
@@ -19,24 +19,24 @@ from datetime import datetime
 import csv
 import collections
 
-###Experimentaly we want to find chr6/chr12 or chr12/chr12 junctions depends on the reference genome file. To split junctions, a file has to be create with these fields : bait chromosome, prey chromosome, start and end position on prey chromosome to delimit legitime junction. Once a junction is called legitimite, it will be send to the closest locus set up in the input locus file. While illegitime junctions will be pool according to the size pool filter, then every pool will be match against repeatMasker database to find repeat event but also against Ensembl to find attach gene to pools. In the same times validation on junctions are made to see if the junction is a viable junction (min_gap option). It is also possible for duplicated parts to send junctions from donor to the acceptor position of this junction (-t). To translate a junction the distance between start locus to junction on donor chromosome will be add to the start of the acceptor chromosome to find a new junction. As some locus between donor and acceptor are not the same length, if a junction fall after the end of a locus, the junction will be add at the end of it.
+###Experimentaly we want to find chr6/chr12 or chr12/chr12 junctions depends on the reference genome file. To split junctions, a file has to be create with these fields : bait chromosome, prey chromosome, start and end position on prey chromosome to delimit legitimate junction. Once a junction is called legitimite, it will be send to the closest locus set up in the input locus file. While illegitimate junctions will be pool according to the size pool filter, then every pool will be match against repeatMasker database to find repeat event but also against Ensembl to find attach gene to pools. In the same times validation on junctions are made to see if the junction is a viable junction (min_gap option). It is also possible for duplicated parts to send junctions from donor to the acceptor position of this junction (-t). To translate a junction the distance between start locus to junction on donor chromosome will be add to the start of the acceptor chromosome to find a new junction. As some locus between donor and acceptor are not the same length, if a junction fall after the end of a locus, the junction will be add at the end of it.
 
 #data=pe.EnsemblRelease(release=85, species=pe.Species(latin_name='homo_sapiens', synonyms=['human'], reference_assemblies={'GRCh38':(76, 85), 'GRCh37': (55, 75), 'NCBI36': (54, 54)}), server='ftp://ftp.ensembl.org')
 
 def usage():
 	print('Usage:\n')
-	print('\tpython '+sys.argv[0]+' -f <metadata.txt> -d <results directory> -k <postprocess directory> -l <locus file> -s <legitime file> -m <mark> -g <genome type> -v <species name> -a <release number> [-n <marks input> -z <pool size> -m <min gap> -r <repeatMasker file> -t <duplicate locus file> -c <contruction fasta file> -j <reference genome fasta file>]')
+	print('\tpython '+sys.argv[0]+' -f <metadata.txt> -d <results directory> -k <postprocess directory> -l <locus file> -s <legitimate file> -m <mark> -g <genome type> -v <species name> -a <release number> [-n <marks input> -z <pool size> -m <min gap> -r <repeatMasker file> -t <duplicate locus file> -c <contruction fasta file> -j <reference genome fasta file>]')
 	print('\t\t-h or --help : display this help')
 	print('\t\t-f or --metadata : metadata file')
 	print('\t\t-d or --res_directory : results directory')
 	print('\t\t-k or --pos_directory : postprocess directory')
 	print('\t\t-l or --file_locus : locus bed file (locus, start, end, strand, flag)')
-	print('\t\t-s or --file_legitime : legitime positions (bait, prey, start, end, flag)')
+	print('\t\t-s or --file_legitimate : legitimate positions (bait, prey, start, end, flag)')
 	print('\t\t-m or --outputMark : mark added to the output file')
 	print('\t\t-g or --genome : only filter librairies results with this genome')
 	print('\t\t-v or --species : species in latin known in Ensembl database (homo_sapiens, mus_musculus...)')
 	print('\t\t-a or --release : release number of your species known in Ensembl database (87,86...)')
-	print('\t\t-z or --size_pool : the number of bases between two junctions to pool them for illegitime junctions (Default : 100)')
+	print('\t\t-z or --size_pool : the number of bases between two junctions to pool them for illegitimate junctions (Default : 100)')
 	print('\t\t-p or --min_gap : minimum of bases between bait and prey to call junction (Default : 5)')
 	print('\t\t-n or --inputMark : marks from input file')
 	print('\t\t-r or --file_repeat : repeatMasker library (.csv)')	
@@ -50,7 +50,7 @@ def main(argv):
 	path_res_directory = ""
 	path_pos_directory = ""
 	file_locus = ""
-	file_legitime = ""
+	file_legitimate = ""
 	mark=""
 	genome = ""
 	species = ""
@@ -68,7 +68,7 @@ def main(argv):
 	df_construction=pd.DataFrame(columns=["chr", "modif_type", "length", "start", "end", "seq"])
 	
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'f:d:k:l:s:m:g:v:a:z:p:n:r:t:c:j:', ['metadata=', 'res_directory=', 'pos_directory=', 'file_locus=', 'file_legitime=', 'outputMark=', 'genome=', 'species=', 'release=', 'size_pool=', 'min_gap=', 'inputMark=', 'file_repeat=', 'translate=', 'construction=', 'fasta=', 'help'])
+		opts, args = getopt.getopt(sys.argv[1:], 'f:d:k:l:s:m:g:v:a:z:p:n:r:t:c:j:', ['metadata=', 'res_directory=', 'pos_directory=', 'file_locus=', 'file_legitimate=', 'outputMark=', 'genome=', 'species=', 'release=', 'size_pool=', 'min_gap=', 'inputMark=', 'file_repeat=', 'translate=', 'construction=', 'fasta=', 'help'])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -87,8 +87,8 @@ def main(argv):
 			path_pos_directory = arg
 		elif opt in ('-l', '--file_locus'):
 			file_locus = arg
-		elif opt in ('-s', '--file_legitime'):
-			file_legitime = arg
+		elif opt in ('-s', '--file_legitimate'):
+			file_legitimate = arg
 		elif opt in ('-m', '--outputMark'):
 			mark = arg
 		elif opt in ('-g', '--genome'):
@@ -188,50 +188,50 @@ def main(argv):
 				sys.exit(2)
 
 ###CHECK LEGITIME FILE
-	if file_legitime=="" or not os.path.exists(file_legitime):
-		print("Error : You have to set a legitime file !\n")
+	if file_legitimate=="" or not os.path.exists(file_legitimate):
+		print("Error : You have to set a legitimate file !\n")
 		usage()
 		sys.exit(2)
 	else:
 		###READ LEGITIME FILE
-		df_legitime_locus = pd.read_table(file_legitime, sep='\t', header=None)
-		for index, row in df_legitime_locus.iterrows():
+		df_legitimate_locus = pd.read_table(file_legitimate, sep='\t', header=None)
+		for index, row in df_legitimate_locus.iterrows():
 			if row[0][0:3] != 'chr':
-				print("Error : line."+str(index+1)+", col.1 of your legitime locus file !\n")
+				print("Error : line."+str(index+1)+", col.1 of your legitimate locus file !\n")
 				print("Error : Unknown chromosome : "+row[0]+" !\n")
 				usage()
 				sys.exit(2)
 			if row[1][0:3] != 'chr':
-				print("Error : line."+str(index+1)+", col.2 of your legitime locus file !\n")
+				print("Error : line."+str(index+1)+", col.2 of your legitimate locus file !\n")
 				print("Error : Unknown chromosome : "+row[1]+" !\n")
 				usage()
 				sys.exit(2)
 			try :
 				if int(row[2]) < 1:
-					print("Error : line."+str(index+1)+", col.3 of your legitime locus file !\n")
+					print("Error : line."+str(index+1)+", col.3 of your legitimate locus file !\n")
 					print("Error : Start position has to be positive integer !\n")
 					usage()
 					sys.exit(2)
 			except :
-				print("Error : line."+str(index+1)+", col.3 of your legitime locus file !\n")
+				print("Error : line."+str(index+1)+", col.3 of your legitimate locus file !\n")
 				print("Error : Unknown start position : "+str(row[2])+" !\n")
 				usage()
 				sys.exit(2)
 			
 			try :
 				if int(row[3]) < 1:
-					print("Error : line."+str(index+1)+", col.4 of your legitime locus file !\n")
+					print("Error : line."+str(index+1)+", col.4 of your legitimate locus file !\n")
 					print("Error : End position has to be positive integer !\n")
 					usage()
 					sys.exit(2)
 			except :
-				print("Error : line."+str(index+1)+", col.4 of your legitime locus file !\n")
+				print("Error : line."+str(index+1)+", col.4 of your legitimate locus file !\n")
 				print("Error : Unknown end position : "+str(row[3])+" !\n")
 				usage()
 				sys.exit(2)
 
 			if int(row[3]) < int(row[2]):
-				print("Error : line."+str(index+1)+" of your legitime locus file !\n")
+				print("Error : line."+str(index+1)+" of your legitimate locus file !\n")
 				print("Error : End position is smaller than start position !\n")
 				usage()
 				sys.exit(2)
@@ -275,8 +275,8 @@ def main(argv):
 ###CHECK SPECIES AND RELEASE
 	if species != "" and release != "" :
 		try:
-			data = pe.EnsemblRelease(release, species=species) # will take a while to get the genome data installed in your system
-			#data=pe.EnsemblRelease(release=85, species=pe.Species(latin_name='homo_sapiens', synonyms=['human'], reference_assemblies={'GRCh38':(76, 85), 'GRCh37': (55, 75), 'NCBI36': (54, 54)}), server='ftp://ftp.ensembl.org')
+			data_ensembl = pe.EnsemblRelease(release, species=species) # will take a while to get the genome data installed in your system
+			#data_ensembl=pe.EnsemblRelease(release=85, species=pe.Species(latin_name='homo_sapiens', synonyms=['human'], reference_assemblies={'GRCh38':(76, 85), 'GRCh37': (55, 75), 'NCBI36': (54, 54)}), server='ftp://ftp.ensembl.org')
 		except:
 			print("Error : Species name and/or release number not correct !\n")
 			usage()
@@ -559,7 +559,7 @@ def main(argv):
 	print('Results Directory : '+path_res_directory)
 	print('Postprocess Directory : '+path_pos_directory)
 	print('Locus File bed : '+file_locus)
-	print('Legitime locus File : '+file_legitime)
+	print('Legitimate locus File : '+file_legitimate)
 	print('Genome : '+genome)
 	print('Species : '+species)
 	print('Size pool : '+str(size_pool))
@@ -593,12 +593,12 @@ def main(argv):
 	df = pd.DataFrame()
 	dict_position=[]
 	table_aux=[]
-	check_legitime=False
+	check_legitimate=False
 	check_trash=False
 	max_type=""
-	count_legitime = 0
+	count_legitimate = 0
 	count_trash = 0
-	count_illegitime = 0
+	count_illegitimate = 0
 
 	###LOOP OVER EACH LIBRARIES
 	for library in metadata['Library'].tolist():
@@ -615,7 +615,7 @@ def main(argv):
 					os.system("mkdir "+path_pos_directory+library)
 				###WRITE HEADER LEGITIME
 				try:
-					with open(path_pos_directory+library+"/"+library+"_Legitime"+file_output_extension, 'wb') as csvfile:
+					with open(path_pos_directory+library+"/"+library+"_Legitimate"+file_output_extension, 'wb') as csvfile:
 						spamwriter = csv.writer(csvfile, delimiter='\t')
 						spamwriter.writerow(['Qname', 'JuncID', 'Rname', 'Junction', 'Strand', 'Rstart', 'Rend', 'B_Rname', 'B_Rstart', 'B_Rend', 'B_Strand', 'Locus Type', 'Position Type', 'Position Delta', 'Seq', 'LenSeq'])
 				finally:
@@ -650,7 +650,7 @@ def main(argv):
 							if row["Rname"] == row["B_Rname"] :
 								if row["Rend"] <= row["B_Rstart"]:
 									if row["B_Rstart"]-row["Rend"] <= min_gap:
-										check_legitime=False
+										check_legitimate=False
 										check_trash=True
 										max_type = "None"
 										max_position = "None"
@@ -658,7 +658,7 @@ def main(argv):
 										#print("Remove B6/SV129_construct")
 								elif row["B_Rend"] <= row["Rstart"]:
 									if row["Rstart"]-row["B_Rend"] <= min_gap:
-										check_legitime=False
+										check_legitimate=False
 										check_trash=True
 										max_type = "None"
 										max_position = "None"
@@ -666,11 +666,11 @@ def main(argv):
 										#print("Remove B6/SV129_construct")
 						if not check_trash:
 							###SEND IT TO LEGITIME OR ILLEGITIME TABLE
-							for index_locus, row_locus in df_legitime_locus.iterrows():
+							for index_locus, row_locus in df_legitimate_locus.iterrows():
 								###READ EACH LINE OF LOCUS LEGITIME
 								if row["B_Rname"] == row_locus[0] and row["Rname"] == row_locus[1] and int(row["Junction"]) >= int(row_locus[2]) and int(row["Junction"]) <= int(row_locus[3]):
 									###LEGITIME JUNCTION
-									check_legitime=True
+									check_legitimate=True
 									basic_locus_name = row_locus[4]
 									if file_translate != "" :
 										###TRANSLATE JUNCTION USING DUPLICATE AREA
@@ -699,26 +699,26 @@ def main(argv):
 									#print(str(max_type), str(max_position), best_locus)
 										
 
-						#if not check_legitime:
+						#if not check_legitimate:
 						#	print("-------------------------------ILLEGITIME")
 					else:
 						#print("-------------------------------TRASH")
 						check_trash=True
-						check_legitime=False
+						check_legitimate=False
 						max_type = "None"
 						max_position = "None"
 						best_locus = "Not Primary"
 
 					###IF NOT LEGITIME NEITHER TRASH
-					if not check_legitime and not check_trash:
-						count_illegitime += 1
+					if not check_legitimate and not check_trash:
+						count_illegitimate += 1
 						df_illegitimates = df_illegitimates.append(row, ignore_index=True)
 
 					###Write for locus file
-					if check_legitime and not check_trash:
-						count_legitime+=1
+					if check_legitimate and not check_trash:
+						count_legitimate+=1
 						try:
-							with open(path_pos_directory+library+"/"+library+"_Legitime"+file_output_extension, 'a') as csvfile:
+							with open(path_pos_directory+library+"/"+library+"_Legitimate"+file_output_extension, 'a') as csvfile:
 								spamwriter = csv.writer(csvfile, delimiter='\t')
 								table=np.array(current_junction, dtype=pd.Series)[0:11].tolist()
 								table.append(best_locus)
@@ -750,7 +750,7 @@ def main(argv):
 					best_locus=""
 					max_type=""
 					max_position=0
-					check_legitime=False
+					check_legitimate=False
 					check_trash=False
 
 				###Fill Illegtime file with repeatMasker informations
@@ -771,22 +771,22 @@ def main(argv):
 						repeat_array.append("None")
 				df_illegitimates.insert(11, "RepeatEvent", repeat_array)
 
-				df_illegitimates.to_csv(path_pos_directory+library+"/"+library+"_Illegitime"+file_output_extension, sep='\t', float_format='%.0f', index=False)
+				df_illegitimates.to_csv(path_pos_directory+library+"/"+library+"_Illegitimate"+file_output_extension, sep='\t', float_format='%.0f', index=False)
 
-				###Illegitimes management
+				###Illegitimates management
 				#print(df_illegitimates)
 
-				dict_position = listChromIllegitime(df_illegitimates)
+				dict_position = listChromIllegitimate(df_illegitimates)
 				#print(dict_position)
-				binIllegitime(dict_position, path_pos_directory+library+"/"+library+"_Percent_illegitime"+file_output_extension, len(df_illegitimates), size_pool, data, df_construction)
+				binIllegitimate(dict_position, path_pos_directory+library+"/"+library+"_Percent_illegitimate"+file_output_extension, len(df_illegitimates), size_pool, data_ensembl, df_construction)
 
 			else:
 				print("Warning : "+path_res_directory+library+"/"+library+file_input_extension+" does not exist")
 				print("Warning :  {"+path_res_directory+library+"/"+library+file_input_extension+"} will not be filtered")
 
 		print("Number of junctions : "+str(count_junction))
-		print("Number of legitime junctions : "+str(count_legitime))
-		print("Number of illegitime junctions : "+str(count_illegitime))
+		print("Number of legitimate junctions : "+str(count_legitimate))
+		print("Number of illegitimate junctions : "+str(count_illegitimate))
 		print("Number of trash junctions : "+str(count_trash))
 		#sys.exit()
 
@@ -850,7 +850,7 @@ def getLocus(line, basic_locus_name, df_locus):
 
 #####################ILLEGITIMES
 
-def listChromIllegitime(df):
+def listChromIllegitimate(df):
 	dict_position={}
 	for index, row in df.iterrows():
 		if row["Rname"] not in dict_position:
@@ -880,7 +880,7 @@ def modified_genome_position(df_construction, chrom, start, end):
 			aux_end = int(aux_end) + int(row['length'])
 	return int(start)-int(aux_start),int(end)-int(aux_end)	
 
-def binIllegitime(dict_position, output, nb_illegitimes, size_pool, data, df_construction):
+def binIllegitimate(dict_position, output, nb_illegitimates, size_pool, data_ensembl, df_construction):
 	
 	table_aux=[]
 
@@ -933,7 +933,7 @@ def binIllegitime(dict_position, output, nb_illegitimes, size_pool, data, df_con
 			if len(dic_size_pool) != 0:
 				with open(output, 'a') as csvfile:
 					spamwriter = csv.writer(csvfile, delimiter='\t')
-					#print(data.genes(contig=i[0][3:]))
+					#print(data_ensembl.genes(contig=i[0][3:]))
 					for key_print, value_print in dic_size_pool.iteritems():
 						###TOO HARD TO MODIFY ENSEMBL COORDINATES TO FIT MY MODIFIED GENOME, SO I WILL MODIFY POSITION TO FIT ENSEMBL COORDINATES
 						if not df_construction.empty:
@@ -942,9 +942,9 @@ def binIllegitime(dict_position, output, nb_illegitimes, size_pool, data, df_con
 							start = key_print.split("-")[0]
 							end = key_print.split("-")[1]
 
-						gene_names = data.gene_names_at_locus(contig=key[3:], position=int(start), end=int(end))
+						gene_names = data_ensembl.gene_names_at_locus(contig=key[3:], position=int(start), end=int(end))
 						genes= ",".join(gene_names)
-						spamwriter.writerow([key,key_print.split("-")[0],key_print.split("-")[1],round(float(int(value_print)*100/float(nb_illegitimes)),4), genes])
+						spamwriter.writerow([key,key_print.split("-")[0],key_print.split("-")[1],round(float(int(value_print)*100/float(nb_illegitimates)),4), genes])
 			else:
 				print("Nothing")
 

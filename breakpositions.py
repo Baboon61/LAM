@@ -171,10 +171,10 @@ def main(argv):
 	###TEST IF INPUT EXIST IN AT LEAST ON LIBRARY
 	check_inputMark = False
 	for library in metadata['Library'].tolist():	
-		if os.path.exists(path_pos_directory+library+"/"+library+"_Legitime"+file_input_extension) or os.path.exists(path_pos_directory+library+"/"+library+"_Illegitime"+file_input_extension):
+		if os.path.exists(path_pos_directory+library+"/"+library+"_Legitimate"+file_input_extension) or os.path.exists(path_pos_directory+library+"/"+library+"_Illegitimate"+file_input_extension):
 			check_inputMark = True
 	if not check_inputMark:
-		print("Error : Your input marks can not localize a good legitime or illegitime file !\n")
+		print("Error : Your input marks can not localize a good legitimate or illegitimate file !\n")
 		usage()
 		sys.exit(2)
 
@@ -215,21 +215,21 @@ def main(argv):
 			print("Warning :  {"+library+"} will not be filtered")
 		else:
 			###CHECK INPUT FILE EXISTS
-			if os.path.exists(path_pos_directory+library+"/"+library+"_Legitime"+file_input_extension):
-				df_legitime = pd.read_csv(path_pos_directory+library+"/"+library+"_Legitime"+file_input_extension, sep='\t', header=0, index_col=None)
-				df_legitime = df_legitime.drop(columns=df_legitime.columns[11:])
+			if os.path.exists(path_pos_directory+library+"/"+library+"_Legitimate"+file_input_extension):
+				df_legitimate = pd.read_csv(path_pos_directory+library+"/"+library+"_Legitimate"+file_input_extension, sep='\t', header=0, index_col=None)
+				df_legitimate = df_legitimate.drop(columns=df_legitimate.columns[11:])
 
 			else:
-				print("Error : The Legitime file for "+library+" is missing !\n")
+				print("Error : The Legitimate file for "+library+" is missing !\n")
 				usage()
 				sys.exit(2)
 
-			if os.path.exists(path_pos_directory+library+"/"+library+"_Illegitime"+file_input_extension):
-				df_illegitime = pd.read_csv(path_pos_directory+library+"/"+library+"_Illegitime"+file_input_extension, sep='\t', header=0, index_col=None)
-				df_illegitime = df_illegitime.drop(columns=df_illegitime.columns[11:])
+			if os.path.exists(path_pos_directory+library+"/"+library+"_Illegitimate"+file_input_extension):
+				df_illegitimate = pd.read_csv(path_pos_directory+library+"/"+library+"_Illegitimate"+file_input_extension, sep='\t', header=0, index_col=None)
+				df_illegitimate = df_illegitimate.drop(columns=df_illegitimate.columns[11:])
 
 			else:
-				print("Error : The Illegitime file for "+library+" is missing !\n")
+				print("Error : The Illegitimate file for "+library+" is missing !\n")
 				usage()
 				sys.exit(2)
 
@@ -239,8 +239,8 @@ def main(argv):
 	#	print(i)
 	
 	nb_files=len(global_list)
-	###Dictionnary with illegitimes and legitimes junctions
-	distance_dict={"illegitimes":{}, "legitimes":{}}
+	###Dictionnary with illegitimates and legitimates junctions
+	distance_dict={"illegitimates":{}, "legitimates":{}}
 
 	###Open one by one tlx files
 	for result_file in global_list:
@@ -253,51 +253,51 @@ def main(argv):
 
 		coff_leg_ille_graph+=1
 
-		###Dictionnary label inside illegitimes and legitimes dictionnaries
-		distance_dict["illegitimes"][label]={}
-		distance_dict["legitimes"][label]={}
+		###Dictionnary label inside illegitimates and legitimates dictionnaries
+		distance_dict["illegitimates"][label]={}
+		distance_dict["legitimates"][label]={}
 
 		#with open(result_file+"/"+label+"_result.tlx", 'r') as f_tlx:
-		with open(result_file+"/"+label+"_Legitime"+file_input_extension, 'r') as f_tlx:
+		with open(result_file+"/"+label+"_Legitimate"+file_input_extension, 'r') as f_tlx:
 			f_tlx.readline()
 			for line in f_tlx:
 				distance=int(int(line.split("\t")[9])-int(line.split("\t")[8]))
-				if distance not in distance_dict["legitimes"][label] :
-					distance_dict["legitimes"][label][distance]=1
+				if distance not in distance_dict["legitimates"][label] :
+					distance_dict["legitimates"][label][distance]=1
 				else:
-					distance_dict["legitimes"][label][distance]+=1
+					distance_dict["legitimates"][label][distance]+=1
 				total_junction+=1
 
-		with open(result_file+"/"+label+"_Illegitime"+file_input_extension, 'r') as f_tlx:
+		with open(result_file+"/"+label+"_Illegitimate"+file_input_extension, 'r') as f_tlx:
 			f_tlx.readline()
 			for line in f_tlx:
 				distance=int(int(line.split("\t")[9])-int(line.split("\t")[8]))
-				if distance not in distance_dict["illegitimes"][label] :
-					distance_dict["illegitimes"][label][distance]=1
+				if distance not in distance_dict["illegitimates"][label] :
+					distance_dict["illegitimates"][label][distance]=1
 				else:
-					distance_dict["illegitimes"][label][distance]+=1
+					distance_dict["illegitimates"][label][distance]+=1
 				total_junction+=1
 
 		### ADD max_distance and max_distance_count to both
 		max_distance=0
 		max_distance_count=0
-		if len(distance_dict["illegitimes"][label]) > 0:
+		if len(distance_dict["illegitimates"][label]) > 0:
 			#max_distance
-			max_distance=max(distance_dict["illegitimes"][label].iteritems(), key=operator.itemgetter(0))[0]
+			max_distance=max(distance_dict["illegitimates"][label].iteritems(), key=operator.itemgetter(0))[0]
 			#max_distance_count
-			max_distance_count=max(distance_dict["illegitimes"][label].iteritems(), key=operator.itemgetter(1))[1]
-		distance_dict["illegitimes"][label]["max_distance"]=max_distance
-		distance_dict["illegitimes"][label]["max_distance_count"]=max_distance_count
+			max_distance_count=max(distance_dict["illegitimates"][label].iteritems(), key=operator.itemgetter(1))[1]
+		distance_dict["illegitimates"][label]["max_distance"]=max_distance
+		distance_dict["illegitimates"][label]["max_distance_count"]=max_distance_count
 
 		max_distance=0
 		max_distance_count=0
-		if len(distance_dict["legitimes"][label]) > 0:
+		if len(distance_dict["legitimates"][label]) > 0:
 			#max_distance
-			max_distance=max(distance_dict["legitimes"][label].iteritems(), key=operator.itemgetter(0))[0]
+			max_distance=max(distance_dict["legitimates"][label].iteritems(), key=operator.itemgetter(0))[0]
 			#max_distance_count
-			max_distance_count=max(distance_dict["legitimes"][label].iteritems(), key=operator.itemgetter(1))[1]
-		distance_dict["legitimes"][label]["max_distance"]=max_distance
-		distance_dict["legitimes"][label]["max_distance_count"]=max_distance_count
+			max_distance_count=max(distance_dict["legitimates"][label].iteritems(), key=operator.itemgetter(1))[1]
+		distance_dict["legitimates"][label]["max_distance"]=max_distance
+		distance_dict["legitimates"][label]["max_distance_count"]=max_distance_count
 		track_number+=1
 
 	#print(distance_dict)
@@ -320,27 +320,27 @@ def main(argv):
 	for bad_label in global_list:
 		label=bad_label.split("/")[-1]
 
-		distance_dict["illegitimes"][label] = manageArray(distance_dict["illegitimes"][label], max_distance_count_all, method)
-		distance_dict["legitimes"][label] = manageArray(distance_dict["legitimes"][label], max_distance_count_all, method)
+		distance_dict["illegitimates"][label] = manageArray(distance_dict["illegitimates"][label], max_distance_count_all, method)
+		distance_dict["legitimates"][label] = manageArray(distance_dict["legitimates"][label], max_distance_count_all, method)
 
-		"""distance_dict["illegitimes"][label] = manageArray(distance_dict["illegitimes"][label], total_junction, method)
-		distance_dict["legitimes"][label] = manageArray(distance_dict["legitimes"][label], total_junction, method)"""
+		"""distance_dict["illegitimates"][label] = manageArray(distance_dict["illegitimates"][label], total_junction, method)
+		distance_dict["legitimates"][label] = manageArray(distance_dict["legitimates"][label], total_junction, method)"""
 
-		distance_dict["illegitimes"][label] = collections.OrderedDict(sorted(distance_dict["illegitimes"][label].items()))
-		distance_dict["legitimes"][label] = collections.OrderedDict(sorted(distance_dict["legitimes"][label].items()))
+		distance_dict["illegitimates"][label] = collections.OrderedDict(sorted(distance_dict["illegitimates"][label].items()))
+		distance_dict["legitimates"][label] = collections.OrderedDict(sorted(distance_dict["legitimates"][label].items()))
 		
-		###Concatenate legitime and illegitime distance and count(use for colors)
+		###Concatenate legitimate and illegitimate distance and count(use for colors)
 		xranges_leg=[]
 		colors_leg=[]
 		xranges_illeg=[]
 		colors_illeg=[]
 
-		#print(distance_dict["illegitimes"][label])
-		for key,value in distance_dict["legitimes"][label].items():
+		#print(distance_dict["illegitimates"][label])
+		for key,value in distance_dict["legitimates"][label].items():
 			xranges_leg.append((key,1))
 			colors_leg.append((0.0, 0.0, 0.0, value))
 		
-		for key,value in distance_dict["illegitimes"][label].items():
+		for key,value in distance_dict["illegitimates"][label].items():
 			xranges_illeg.append((key,1))
 			colors_illeg.append((1.0, 0.0, 0.0, value))
 		

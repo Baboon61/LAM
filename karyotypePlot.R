@@ -27,7 +27,7 @@ spec = matrix(c(
 'outputMark' , 'm', 1, "character", "mark added to the output file",
 'genome' , 'g', 1, "character", "only filter librairies results with this genome",
 'threshold' , 't', 2, "double", "select grouped jonctions above the threshold",
-'sizePool' , 'z', 1, "integer", "the number of bases between two junctions to pool them for illegitime junctions",
+'sizePool' , 'z', 1, "integer", "the number of bases between two junctions to pool them for illegitimate junctions",
 'reference' , 'r', 1, "character", "the reference file used to call junctions",
 'chromosomesLength', 'l', 1, "character", "the chromosome length file for your genome",
 'cytoband' , 'c', 1, "character", "the cytoband file corresponding to your genome",

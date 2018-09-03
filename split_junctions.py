@@ -86,7 +86,7 @@ def main(argv):
         columns=["chr", "modif_type", "length", "start", "end", "seq"])
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'm:g:o:p:t:q:n:r:c:s:l:v:a:b:u:n:', ['file_metadata=', 'genome=', 'output_mark=', 'dir_post=', 'dir_results=', 'file_legitimate=',
+        opts, args = getopt.getopt(sys.argv[1:], 'm:g:o:p:t:q:i:r:c:s:l:v:a:b:u:n:', ['file_metadata=', 'genome=', 'output_mark=', 'dir_post=', 'dir_results=', 'file_legitimate=',
                                                                                       'input_mark=', 'file_reference=', 'file_construction=', 'size_pool=', 'file_locus=', 'species=', 'release=', 'min_gap=', 'file_repeat=', 'file_duplicate=', 'help'])
     except getopt.GetoptError:
         usage()
@@ -249,7 +249,7 @@ def main(argv):
     # CHECK LOCUS FILE
     if file_locus == "" or not os.path.exists(file_locus):
         print("Warning : You have not set a locus file !\n")
-        df_locus = ""
+        df_locus = pd.DataFrame()
     else:
         # READ LOCUS FILE
         df_locus = pd.read_table(file_locus, sep='\t', header=None)
@@ -347,7 +347,7 @@ def main(argv):
             finally:
                 f_repeat.close()
     else:
-        df_repeat = ""
+        df_repeat = pd.DataFrame()
 
     # CHECK DUPLICATE FILE
     if file_duplicate != "":
@@ -716,11 +716,11 @@ def main(argv):
             # CHECK INPUT FILE EXISTS
             if os.path.exists(dir_results + library + "/" + library + file_input_extension):
                 print(library)
-                if not os.path.exists(dir_results + library):
-                    os.system("mkdir " + dir_results + library)
+                if not os.path.exists(dir_post + library):
+                    os.system("mkdir " + dir_post + library)
                 # WRITE HEADER LEGITIME
                 try:
-                    with open(dir_results + library + "/" + library + "_Legitimate" + file_output_extension, 'wb') as csvfile:
+                    with open(dir_post + library + "/" + library + "_Legitimate" + file_output_extension, 'wb') as csvfile:
                         spamwriter = csv.writer(csvfile, delimiter='\t')
                         spamwriter.writerow(['Qname', 'JuncID', 'Rname', 'Junction', 'Strand', 'Rstart', 'Rend', 'B_Rname',
                                              'B_Rstart', 'B_Rend', 'B_Strand', 'Locus Type', 'Position Type', 'Position Delta', 'Seq', 'LenSeq'])
@@ -729,7 +729,7 @@ def main(argv):
 
                 # WRITE HEADER TRASH
                 try:
-                    with open(dir_results + library + "/" + library + "_Trash" + file_output_extension, 'wb') as csvfile:
+                    with open(dir_post + library + "/" + library + "_Trash" + file_output_extension, 'wb') as csvfile:
                         spamwriter = csv.writer(csvfile, delimiter='\t')
                         spamwriter.writerow(['Qname', 'JuncID', 'Rname', 'Junction', 'Strand', 'Rstart', 'Rend', 'B_Rname',
                                              'B_Rstart', 'B_Rend', 'B_Strand', 'Locus Type', 'Position Type', 'Position Delta', 'Seq', 'LenSeq'])
@@ -816,7 +816,7 @@ def main(argv):
                                         # print(current_junction)
 
                                     # FIND THE BEST LOCUS
-                                    if df_locus != "":
+                                    if len(df_locus) != 0:
                                         max_type, max_position, best_locus = getLocus(
                                             current_junction, basic_locus_name, df_locus)
                                     else:
@@ -898,18 +898,15 @@ def main(argv):
                         junc_start = row['Junction']
                         junc_end = row['Junction']
                     if junc_start != -1 and junc_end != -1:
-                        if df_repeat != "":
+                        if len(df_repeat) != 0:
                             res = df_repeat.loc[(df_repeat['begin'].astype(int) <= junc_start) & (df_repeat[
                                 'end'].astype(int) >= junc_start) & (df_repeat['sequence'] == row['Rname'])]
                         else:
-                            res = ""
-                    if res != "":
-                        if len(res) != 0:
-                            repeat_array.append(res["class/family"].values[0])
-                        else:
-                            repeat_array.append("None")
+                            res = pd.DataFrame()
+                    if len(res)!= 0:
+                        repeat_array.append(res["class/family"].values[0])
                     else:
-                        repeat_array.append("Null")
+                        repeat_array.append("None")
 
                 df_illegitimates.insert(11, "RepeatEvent", repeat_array)
 

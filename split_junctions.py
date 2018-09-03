@@ -40,7 +40,7 @@ import collections
 
 def usage():
     print('Usage:\n')
-    print('\tpython ' + sys.argv[0] + ' -m <metadata file> -g <genome type> -o <output mark> -p <postprocess directory> -t <results directory> -q <legitimate file> [-i <input mark> -r <reference fasta file> -c <contruction fasta file> -s <pool size> -l <locus file> -v <species name> -a <release number> -b <gap minimum> -u <repeatMasker file> -n <duplicate file> ]')
+    print('\tpython ' + sys.argv[0] + ' -m <metadata file> -g <genome type> -o <output mark> -p <postprocess directory> -t <results directory> -q <legitimate file> [-i <input mark> -r <reference fasta file> -c <contruction fasta file> -s <pool size> -l <locus file> -v <species name> -a <release number> -b <gap minimum> -u <repeatMasker file> -n <duplicate file>]')
     print('\t\t-h or --help : display this help')
     print('\t\t-m or --file_metadata : metadata file')
     print('\t\t-g or --genome : only filter librairies results with this genome')
@@ -49,8 +49,8 @@ def usage():
     print('\t\t-t or --dir_results : results directory')
     print('\t\t-q or --file_legitimate : legitimate positions (bait, prey, start, end, flag)')
     print('\t\t-i or --input_mark : marks from input file')
-    print('\t\t-r or --file_reference : reference fasta file (mandatory with -c option)')
-    print('\t\t-c or --file_construction : construction fasta file for modified genome (in $BOWTIE2_INDEXES), this option will ajust genes position to modified genome')
+    print('\t\t-r or --file_reference : reference fasta file (Mandatory is modified reference genome)')
+    print('\t\t-c or --file_construction : construction fasta file for modified genome (in $BOWTIE2_INDEXES), this option will ajust genes position to modified genome (Mandatory is modified reference genome)')
     print('\t\t-s or --size_pool : the number of bases between two junctions to pool them for illegitimate junctions (Default : 100)')
     print('\t\t-l or --file_locus : locus bed file (locus, start, end, strand, flag)')
     print('\t\t-v or --species : species in latin known in Ensembl database (homo_sapiens, mus_musculus...)')

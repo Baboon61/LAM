@@ -18,30 +18,30 @@ import csv
 def usage():
     print('Usage:\n')
     print('\tpython ' +
-          sys.argv[0] + ' -m <metadata file> -t <results directory> -o <output mark> -g <genome type> -c <construction fasta file> [-i <input mark>]')
+          sys.argv[0] + ' -m <metadata file> -g <genome type> -o <output mark> -c <construction fasta file> -t <results directory> [-i <input mark>]')
     print('\t\t-h or --help : display this help')
     print('\t\t-m or --file_metadata : metadata file')
-    print('\t\t-t or --dir_results : results directory')
-    print('\t\t-o or --output_mark : mark added to the output file name')
     print('\t\t-g or --genome : only filter librairies results with this genome')
+    print('\t\t-o or --output_mark : mark added to the output file name')
     print('\t\t-c or --file_construction : duplicate position from the experimental construction (chr,start,end)')
+    print('\t\t-t or --dir_results : results directory')
     print('\t\t-i or --input_mark : marks from input file')
 
 
 def main(argv):
 
     file_metadata = ""
-    dir_results = ""
-    output_mark = ""
     genome = ""
+    output_mark = ""
+    dir_results = ""
     input_mark = ""
     file_construction = ""
     file_input_extension = ""
     file_output_extension = ""
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'm:t:o:g:c:i:', [
-                                   'file_metadata=', 'dir_results=', 'output_mark=', 'genome=', 'file_construction=', 'input_mark', 'help'])
+        opts, args = getopt.getopt(sys.argv[1:], 'm:g:o:c:t:i:', [
+                                   'file_metadata=', 'genome=', 'output_mark=', 'file_construction=', 'dir_results=', 'input_mark', 'help'])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -54,14 +54,14 @@ def main(argv):
             sys.exit(2)
         elif opt in ('-m', '--file_metadata'):
             file_metadata = arg
-        elif opt in ('-t', '--dir_results'):
-            dir_results = arg
-        elif opt in ('-o', '--output_mark'):
-            output_mark = arg
         elif opt in ('-g', '--genome'):
             genome = arg
+        elif opt in ('-o', '--output_mark'):
+            output_mark = arg
         elif opt in ('-c', '--file_construction'):
             file_construction = arg
+        elif opt in ('-t', '--dir_results'):
+            dir_results = arg
         elif opt in ('-i', '--input_mark'):
             input_mark = arg
 
@@ -81,16 +81,7 @@ def main(argv):
         # READ METADATA FILE
         metadata = pd.read_table(file_metadata, sep='\t')
 
-    # CHECK RESULTS DIRECTORY
-    if not os.path.exists(dir_results):
-        print("Error : You have to set a results directory !\n")
-        usage()
-        sys.exit(2)
-    else:
-        if dir_results[-1] != "/":
-            dir_results += "/"
-
-    # FILTER METADATA FILE IF GENOME INPUT
+     # FILTER METADATA FILE IF GENOME INPUT
     if genome != "":
         metadata = metadata.loc[metadata['Assembly'] == genome]
         if metadata.empty:
@@ -101,6 +92,15 @@ def main(argv):
         print("Error : You have to set a genome name !\n")
         usage()
         sys.exit(2)
+
+    # CHECK RESULTS DIRECTORY
+    if not os.path.exists(dir_results):
+        print("Error : You have to set a results directory !\n")
+        usage()
+        sys.exit(2)
+    else:
+        if dir_results[-1] != "/":
+            dir_results += "/"
 
     # CHECK INPUT MARKS HISTORY
     if input_mark == "":
@@ -243,9 +243,9 @@ def main(argv):
 
     print('\n-----------------------------------------')
     print('Metadata file : ' + file_metadata)
-    print('Results directory : ' + dir_results)
     print('Genome : ' + genome)
     print('Construction file : ' + file_construction)
+    print('Results directory : ' + dir_results)
     print('Input file extension: ' + file_input_extension)
     print('Output file extension : ' + file_output_extension)
     print('-----------------------------------------\n')

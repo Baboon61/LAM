@@ -70,7 +70,7 @@ import pandas as pd
 
 def usage():
     print('Usage:')
-    print('\tpython ' + sys.argv[0] + ' -m <mode : list, look, modify> -g <genome type> -r <reference fasta file> -c <construction fasta file> -p <position> -s <surroundings length> [-i <info file>]')
+    print('\tpython ' + sys.argv[0] + ' -m <mode : list, look, modify> -g <genome type> -r <reference fasta file> -c <construction fasta file> -p <position> [-s <surroundings length> -i <info file>]')
     print('\t\t-h or --help : display this help')
     print('\t\t-m or --mode : list, look, modify')
     print('\t\t-g or --genome : genome type')
@@ -88,10 +88,11 @@ def main(argv):
     file_reference = ""
     file_construction = ""
     position = ""
-    full_seq = ""
     surroundings = 10
-    chrom_dict = {}
     info_file = ""
+
+    full_seq = ""
+    chrom_dict = {}
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'm:g:r:c:p:s:i:', [

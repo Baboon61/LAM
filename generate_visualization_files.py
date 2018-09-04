@@ -514,7 +514,7 @@ def main(argv):
                             [chrP, junction, min_pos, max_pos, chrB, min_B, max_B, value])
         # sys.exit()
 
-##########################################################################
+##############################FUNCTIONS##############################
 
 # ENABLE ITERATION ON DATAFRAME
 

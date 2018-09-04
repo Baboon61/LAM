@@ -55,7 +55,7 @@ def main(argv):
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'm:g:o:r:p:i:s:t:b:', ['file_metadata=', 'genome=', 'output_mark=',
-                                                                        'file_reference=', 'dir_post=', 'input_mark', 'size_pool=', 'percent_transloc=', 'bin_size=', 'help'])
+                                                                        'file_reference=', 'dir_post=', 'input_mark=', 'size_pool=', 'percent_transloc=', 'bin_size=', 'help'])
     except getopt.GetoptError:
         usage()
         sys.exit(2)

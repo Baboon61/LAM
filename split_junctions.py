@@ -684,7 +684,7 @@ def main(argv):
         print('No RepeatMasker information')
     if not file_duplicate == "":
         print('Duplicate file : ' + file_duplicate)
-        print('\tWarning : Some junctions will be change')
+        print('\tWarning : Some junctions will be changed')
     else:
         print('No junction translation file needed')
     print('-----------------------------------------\n')

@@ -903,7 +903,7 @@ def main(argv):
                                 'end'].astype(int) >= junc_start) & (df_repeat['sequence'] == row['Rname'])]
                         else:
                             res = pd.DataFrame()
-                    if len(res)!= 0:
+                    if len(res) != 0:
                         repeat_array.append(res["class/family"].values[0])
                     else:
                         repeat_array.append("None")

@@ -86,6 +86,14 @@ def main(argv):
             usage()
             sys.exit(2)
 
+    # CHECK CSREPORT DIRECTORY
+	if not os.path.exists(path_CSReport):
+		print("Error : You do not have a CSReport directory in your scripts folder !\n")
+		usage()
+		sys.exit(2)
+	else:
+		sys.path.append(path_CSReport)
+
     # CHECK METADATA FILE
     if file_metadata == "" or not os.path.exists(file_metadata):
         print("Error : You have to set a metadata file !\n")

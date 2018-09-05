@@ -36,7 +36,7 @@ spec = matrix(c(
 'file_construction', 'c', 2, "character", "construction fasta file for modified genome (in $BOWTIE2_INDEXES)",
 'size_pool' , 's', 1, "integer", "the number of bases between two junctions to pool them for illegitimate junctions (Default : 100)",
 'file_locus', 'l', 2, "character", "file to set up some locus labels",
-'greek', 'k', 0, "logical", "(only if -s option), transform locus name to greek name (alpha, beta...)",
+'greek', 'k', 0, "logical", "(only if -l option), transform locus name to greek name (alpha, Alpha, beta...)",
 'unlink' , 'u', 0, "logical", "unlink the bait1/prey1, bait2/prey2 process and allows to search for bait1/prey2 junctions",
 'threshold' , 't', 2, "double", "select grouped jonctions above the threshold",
 'file_rename', 'x', 2, "character", "file to rename chromosome to a better display"
@@ -846,7 +846,7 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 			genes_karyo_data <- karyo_data
 
 			# CREATE PDF NAME
-			pdf(file=paste(c(opt$dir_post,as.vector(metadata$Library[library]),"/",as.vector(metadata$Library[library]), file_output_extension, collapse=''), height=8, width=8);
+			pdf(file=paste(c(opt$dir_post,as.vector(metadata$Library[library]),"/",as.vector(metadata$Library[library]), file_output_extension), collapse=''), height=8, width=8);
 
 			# GENOME DISPLAY
 			chromosomesLength = read.table(opt$file_chrom_length, header = TRUE, sep="\t", stringsAsFactors = FALSE)

@@ -1437,7 +1437,7 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 					}
 				}
 			}
-			# PRINTS LOCIS
+			# PRINT LOCIS
 			if (!is.null(opt$file_locus)) {
 				kpPlotMarkers(kp, data=toGRanges(df_locus), text.orientation = "vertical", label.color="red", labels=names_markers, r1=0.2, cex=0.4, adjust.label.position = TRUE, label.margin=3)
 			}

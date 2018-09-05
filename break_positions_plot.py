@@ -81,7 +81,7 @@ def main(argv):
     #pd.options.mode.chained_assignment = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'm:g:p:m:d:n:', [
+        opts, args = getopt.getopt(sys.argv[1:], 'm:g:p:o:e:i:', [
                                    'file_metadata=', 'genome=', 'dir_post=', 'output_mark=', 'method=', 'input_mark=', 'help'])
     except getopt.GetoptError:
         usage()

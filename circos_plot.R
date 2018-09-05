@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-### A script allowing to create a Circos plot according to 3 files (histo, link and cytoband file) output from generate_visualization_files.py
+# A script allowing to create a Circos plot according to 3 files (histo, link and cytoband file) output from generate_visualization_files.py
 
 ##############################IMPORTS##############################
 
@@ -183,7 +183,7 @@ for(i in 1:nrow(metadata[1])){
 			# ADD RIBBON LINK TO THE CENTER OF THE PLOT AREA
 			RCircos.Ribbon.Plot(ribbon.data=link, track.num=3, by.chromosome=TRUE);
 
-			#  CLOSE THE GRAPHIC DEVICE AND CLEAR MEMORY
+			# CLOSE THE GRAPHIC DEVICE AND CLEAR MEMORY
 			dev.off();
 
 		} else{

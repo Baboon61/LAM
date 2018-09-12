@@ -1,7 +1,7 @@
 # A script allowing to split junctions to legitimate, illegitimate or
 # trash junctions. Also, able to categorize legitimate junctions to
-# different input locis, group illegitimate junctions to pool in order to
-# find commun locis and gene location close to this pool.
+# different input loci, group illegitimate junctions to pool in order to
+# find commun loci and gene location close to this pool.
 
 ##############################IMPORTS##############################
 

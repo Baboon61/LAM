@@ -32,7 +32,7 @@ spec = matrix(c(
 'chr_bait' , 'a', 1, "character", "chromosomes bait to display, separated by comma, write 'all' to display all chromosomes",
 'chr_prey' , 'b', 1, "character", "chromosomes prey to display, separated by comma, write 'all' to display all chromosomes",
 'input_mark' , 'i', 2, "character", "marks from input file",
-'UCSC', 'z', 0, "logical", "add UCSC gene locis",
+'UCSC', 'z', 0, "logical", "add UCSC gene loci",
 'file_construction', 'c', 2, "character", "construction fasta file for modified genome (in $BOWTIE2_INDEXES)",
 'size_pool' , 's', 1, "integer", "the number of bases between two junctions to pool them for illegitimate junctions (Default : 100)",
 'file_locus', 'l', 2, "character", "file to set up some locus labels",
@@ -177,10 +177,10 @@ if ( is.null(opt$visualization ) ) { write("Error : -v|--visualization option ca
 if ( is.null(opt$chr_bait ) ) { write("Error : -a|--chr_bait option can not be null",stderr()); write("\n",stderr()); cat(getopt(spec, usage=TRUE)); q(status=1) }
 if ( is.null(opt$chr_prey ) ) { write("Error : -b|--chr_prey option can not be null",stderr()); write("\n",stderr()); cat(getopt(spec, usage=TRUE)); q(status=1) }
 if ( is.null(opt$input_mark)) { write("Warning : You will process the raw file !",stderr()); opt$input_mark = "" }
-if ( is.null(opt$UCSC ) ) { write("Warning : Do not add UCSC gene locis !",stderr()); opt$UCSC=FALSE }
+if ( is.null(opt$UCSC ) ) { write("Warning : Do not add UCSC gene loci !",stderr()); opt$UCSC=FALSE }
 if ( is.null(opt$size_pool ) ) { opt$size_pool = 100 }
-if ( is.null(opt$file_locus ) ) { write("Warning : You will not add personal locis to the karyo plot !",stderr()); opt$file_locus = NULL; opt$greek=FALSE }
-if ( is.null(opt$greek ) ) { write("Warning : Do not change locis name with greek letters !",stderr()); opt$greek=FALSE }
+if ( is.null(opt$file_locus ) ) { write("Warning : You will not add personal loci to the karyo plot !",stderr()); opt$file_locus = NULL; opt$greek=FALSE }
+if ( is.null(opt$greek ) ) { write("Warning : Do not change loci name with greek letters !",stderr()); opt$greek=FALSE }
 if ( is.null(opt$unlink ) ) { write("Warning : Bait and prey are linked !",stderr()); unlink=FALSE }
 if ( is.null(opt$threshold ) ) { write("Warning : You will display all grouped junctions !",stderr()); opt$threshold = FALSE }
 if ( is.null(opt$file_rename ) ) { write("Warning : You will not rename some chromosome names !",stderr()); opt$file_rename = NULL }
@@ -1437,7 +1437,7 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 					}
 				}
 			}
-			# PRINT LOCIS
+			# PRINT LOCI
 			if (!is.null(opt$file_locus)) {
 				kpPlotMarkers(kp, data=toGRanges(df_locus), text.orientation = "vertical", label.color="red", labels=names_markers, r1=0.2, cex=0.4, adjust.label.position = TRUE, label.margin=3)
 			}

@@ -57,7 +57,7 @@ def usage():
     print('\t\t-a or --release : release number of your species known in Ensembl database (87,86...)')
     print('\t\t-b or --min_gap : minimum of bases between bait and prey to call junction (Default : 5)')
     print('\t\t-u or --file_repeat : repeatMasker library (.csv)')
-    print('\t\t-n or --file_duplicate : duplicate area file for modified genome, this option will translate junctions from donor site to acceptor site')
+    print('\t\t-n or --file_duplicate : duplicate positions from the experimental construction')
 
 
 def main(argv):
@@ -353,31 +353,31 @@ def main(argv):
     if file_duplicate != "":
         if not os.path.exists(file_duplicate):
             print(
-                "Error : You activate -t option but the duplicate construction file is missing !\n")
+                "Error : You activate -t option but the duplicate duplicate file is missing !\n")
             usage()
             sys.exit(2)
         else:
-            # READ CONSTRUCTION FILE
+            # READ DUPLICATE FILE
             duplicate_locus = pd.read_table(
                 file_duplicate, sep='\t', header=None)
             for index, row in duplicate_locus.iterrows():
                 # DONOR CHECK
                 if row[0][0:3] != 'chr':
                     print("Error : line." + str(index + 1) +
-                          ", col.1 of your construction file !\n")
+                          ", col.1 of your duplicate file !\n")
                     print("Error : Unknown chromosome : " + row[0] + " !\n")
                     usage()
                     sys.exit(2)
                 try:
                     if int(row[1]) < 1:
                         print("Error : line." + str(index + 1) +
-                              ", col.2 of your construction file !\n")
+                              ", col.2 of your duplicate file !\n")
                         print("Error : Start position has to be positive integer !\n")
                         usage()
                         sys.exit(2)
                 except:
                     print("Error : line." + str(index + 1) +
-                          ", col.2 of your construction file !\n")
+                          ", col.2 of your duplicate file !\n")
                     print("Error : Unknown start position : " +
                           str(row[1]) + " !\n")
                     usage()
@@ -385,26 +385,26 @@ def main(argv):
                 try:
                     if int(row[2]) < 1:
                         print("Error : line." + str(index + 1) +
-                              ", col.3 of your construction file !\n")
+                              ", col.3 of your duplicate file !\n")
                         print("Error : End position has to be positive integer !\n")
                         usage()
                         sys.exit(2)
                 except:
                     print("Error : line." + str(index + 1) +
-                          ", col.3 of your construction file !\n")
+                          ", col.3 of your duplicate file !\n")
                     print("Error : Unknown end position : " +
                           str(row[2]) + " !\n")
                     usage()
                     sys.exit(2)
                 if int(row[2]) < int(row[1]):
                     print("Error : line." + str(index + 1) +
-                          " of your construction file !\n")
+                          " of your duplicate file !\n")
                     print("Error : End position is smaller than start position !\n")
                     usage()
                     sys.exit(2)
                 if row[3] != '+' and row[3] != '-':
                     print("Error : line." + str(index + 1) +
-                          ", col.4 of your construction file !\n")
+                          ", col.4 of your duplicate file !\n")
                     print("Error : Unknown strand (+,-) : " +
                           str(row[3]) + " !\n")
                     usage()
@@ -412,20 +412,20 @@ def main(argv):
                 # ACCEPTOR CHECK
                 if row[4][0:3] != 'chr':
                     print("Error : line." + str(index + 1) +
-                          ", col.5 of your construction file !\n")
+                          ", col.5 of your duplicate file !\n")
                     print("Error : Unknown chromosome : " + row[4] + " !\n")
                     usage()
                     sys.exit(2)
                 try:
                     if int(row[5]) < 1:
                         print("Error : line." + str(index + 1) +
-                              ", col.6 of your construction file !\n")
+                              ", col.6 of your duplicate file !\n")
                         print("Error : Start position has to be positive integer !\n")
                         usage()
                         sys.exit(2)
                 except:
                     print("Error : line." + str(index + 1) +
-                          ", col.6 of your construction file !\n")
+                          ", col.6 of your duplicate file !\n")
                     print("Error : Unknown start position : " +
                           str(row[5]) + " !\n")
                     usage()
@@ -433,26 +433,26 @@ def main(argv):
                 try:
                     if int(row[6]) < 1:
                         print("Error : line." + str(index + 1) +
-                              ", col.7 of your construction file !\n")
+                              ", col.7 of your duplicate file !\n")
                         print("Error : End position has to be positive integer !\n")
                         usage()
                         sys.exit(2)
                 except:
                     print("Error : line." + str(index + 1) +
-                          ", col.7 of your construction file !\n")
+                          ", col.7 of your duplicate file !\n")
                     print("Error : Unknown end position : " +
                           str(row[6]) + " !\n")
                     usage()
                     sys.exit(2)
                 if int(row[6]) < int(row[5]):
                     print("Error : line." + str(index + 1) +
-                          " of your construction file !\n")
+                          " of your duplicate file !\n")
                     print("Error : End position is smaller than start position !\n")
                     usage()
                     sys.exit(2)
                 if row[7] != '+' and row[7] != '-':
                     print("Error : line." + str(index + 1) +
-                          ", col.8 of your construction file !\n")
+                          ", col.8 of your duplicate file !\n")
                     print("Error : Unknown strand (+,-) : " +
                           str(row[7]) + " !\n")
                     usage()

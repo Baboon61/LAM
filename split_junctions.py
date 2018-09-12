@@ -55,7 +55,7 @@ def usage():
     print('\t\t-l or --file_locus : locus bed file (locus, start, end, strand, flag)')
     print('\t\t-v or --species : species in latin known in Ensembl database (homo_sapiens, mus_musculus...)')
     print('\t\t-a or --release : release number of your species known in Ensembl database (87,86...)')
-    print('\t\t-b or --min_gap : minimum of bases between bait and prey to call junction (Default : 5)')
+    print('\t\t-b or --min_gap : minimum of bases between bait and prey to call junction (Default : 15)')
     print('\t\t-u or --file_repeat : repeatMasker library (.csv)')
     print('\t\t-n or --file_duplicate : duplicate positions from the experimental construction')
 
@@ -68,7 +68,7 @@ def main(argv):
     dir_post = ""
     dir_results = ""
     file_legitimate = ""
-    min_gap = 5
+    min_gap = 15
     input_mark = ""
     file_input_extension = ""
     file_output_extension = ""
@@ -933,6 +933,10 @@ def main(argv):
         print("Number of legitimate junctions : " + str(count_legitimate))
         print("Number of illegitimate junctions : " + str(count_illegitimate))
         print("Number of trash junctions : " + str(count_trash))
+
+        count_legitimate = 0
+        count_trash = 0
+        count_illegitimate = 0
         # sys.exit()
 
     # print("DONE")

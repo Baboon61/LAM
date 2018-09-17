@@ -423,13 +423,13 @@ def main(argv):
 
     # SET UP DISPLAY BACKGROUND
     ax.axis('tight')
-    #ax.set_xlim([0, max_distance_all+10])
+    ax.set_xlim([0, max_distance_all+10])
     ax.set_yticks(yticks)
     ax.set_yticklabels(yticklabels)
 
     ax.set_xticks(range(0, max_distance_all + 10, 5))
     ax.get_xaxis().get_major_formatter().set_scientific(False)
-    plt.xlabel("Position from bait start")
+    plt.xlabel("Position from bait primer")
     plt.axes().xaxis.set_minor_locator(MultipleLocator(1))
 
     # SET UP TITLE

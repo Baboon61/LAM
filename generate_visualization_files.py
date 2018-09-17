@@ -387,7 +387,7 @@ def main(argv):
                         #print("last cell")
                         # If MegaValues empty
                         if int(min_pos) == 0:
-                            #print("RIEN DANS MIN_POS")
+                            #print("NOTHING IN MIN_POS")
                             junction, min_pos, max_pos, chrB, min_B, max_B = firstValues(
                                 table_aux[j], junction, min_pos, max_pos, chrB, min_B, max_B)
                         # Update Megavalues
@@ -423,10 +423,10 @@ def main(argv):
                             nb_transloc += 1
                         # If the next one can not create a Megavalue
                         else:
-                            #print("jattrape pas plus loin")
+                            #print("Cannot catch further")
                             # If MegaValues empty
                             if int(min_pos) == 0:
-                                #print("RIEN DANS MIN_POS")
+                                #print("NOTHING IN MIN_POS")
                                 junction, min_pos, max_pos, chrB, min_B, max_B = firstValues(
                                     table_aux[j], junction, min_pos, max_pos, chrB, min_B, max_B)
                             # Update Megavalues

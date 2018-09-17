@@ -34,7 +34,6 @@ spec = matrix(c(
 'input_mark' , 'i', 2, "character", "marks from input file",
 'UCSC', 'z', 0, "logical", "add UCSC gene loci",
 'file_construction', 'c', 2, "character", "construction fasta file for modified genome (in $BOWTIE2_INDEXES)",
-'size_pool' , 's', 1, "integer", "the number of bases between two junctions to pool them for illegitimate junctions (Default : 100)",
 'file_locus', 'l', 2, "character", "file to set up some locus labels",
 'greek', 'k', 0, "logical", "(only if -l option), transform locus name to greek name (alpha, Alpha, beta...)",
 'unlink' , 'u', 0, "logical", "unlink the bait1/prey1, bait2/prey2 process and allows to search for bait1/prey2 junctions",
@@ -178,7 +177,6 @@ if ( is.null(opt$chr_bait ) ) { write("Error : -a|--chr_bait option can not be n
 if ( is.null(opt$chr_prey ) ) { write("Error : -b|--chr_prey option can not be null",stderr()); write("\n",stderr()); cat(getopt(spec, usage=TRUE)); q(status=1) }
 if ( is.null(opt$input_mark)) { write("Warning : You will process the raw file !",stderr()); opt$input_mark = "" }
 if ( is.null(opt$UCSC ) ) { write("Warning : Do not add UCSC gene loci !",stderr()); opt$UCSC=FALSE }
-if ( is.null(opt$size_pool ) ) { opt$size_pool = 100 }
 if ( is.null(opt$file_locus ) ) { write("Warning : You will not add personal loci to the karyo plot !",stderr()); opt$file_locus = NULL; opt$greek=FALSE }
 if ( is.null(opt$greek ) ) { write("Warning : Do not change loci name with greek letters !",stderr()); opt$greek=FALSE }
 if ( is.null(opt$unlink ) ) { write("Warning : Bait and prey are linked !",stderr()); unlink=FALSE }
@@ -501,14 +499,6 @@ if (opt$UCSC) {
 	}
 }
 
-# CHECK SIZE POOL
-if (strtoi(opt$size_pool)<=0){
-	write("Error : The size pool should be a positive integer !",stderr())
-	write("\n",stderr())
-	cat(getopt(spec, usage=TRUE))
-	q(status=1)
-}
-
 # CHECK LOCUS FILE
 if (!is.null(opt$file_locus)){
 	if (!(file.exists(opt$file_locus))){
@@ -642,7 +632,6 @@ if (opt$UCSC) {
 } else{
 	write('UCSC genes : No',stderr())
 }
-write(paste0('Size pool : ',opt$size_pool),stderr())
 if (!is.null(opt$file_locus)) {
 	write(paste0('Locus file : ',opt$file_locus),stderr())
 }
@@ -729,8 +718,8 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 									duprows <- rownames(karyo_data[(karyo_data$Rname==matrix_Prey[j,1]),]) %in% rownames(tmp_karyo_data)
 									tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[(karyo_data$Rname==matrix_Prey[j,1]),][!duprows,])
 								} else{
-									duprows <- rownames(karyo_data[(karyo_data$Rname==matrix_Prey[j,1]) & (karyo_data$Junction+(opt$size_pool/2) >= strtoi(matrix_Prey[j,2])) & (karyo_data$Junction-(opt$size_pool/2) <= matrix_Prey[j,3]),]) %in% rownames(tmp_karyo_data)
-									tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[(karyo_data$Rname==matrix_Prey[j,1]) & (karyo_data$Junction+(opt$size_pool/2) >= strtoi(matrix_Prey[j,2])) & (karyo_data$Junction-(opt$size_pool/2) <= strtoi(matrix_Prey[j,3])),][!duprows,])
+									duprows <- rownames(karyo_data[(karyo_data$Rname==matrix_Prey[j,1]) & (karyo_data$Junction >= strtoi(matrix_Prey[j,2])) & (karyo_data$Junction <= matrix_Prey[j,3]),]) %in% rownames(tmp_karyo_data)
+									tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[(karyo_data$Rname==matrix_Prey[j,1]) & (karyo_data$Junction >= strtoi(matrix_Prey[j,2])) & (karyo_data$Junction <= strtoi(matrix_Prey[j,3])),][!duprows,])
 								}
 							}else{
 								tmp_karyo_data <- karyo_data
@@ -760,16 +749,16 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 								tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & (karyo_data$Rname==matrix_Prey[j,1])),][!duprows,])
 							} else if (matrix_Bait[i,2] == "" & matrix_Prey[j,2] != ""){
 								#print("Bait no position")
-								duprows <- rownames(karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & ((karyo_data$Rname==matrix_Prey[j,1]) & (karyo_data$Junction+(opt$size_pool/2) >= strtoi(matrix_Prey[j,2])) & (karyo_data$Junction-(opt$size_pool/2) <= strtoi(matrix_Prey[j,3])))),]) %in% rownames(tmp_karyo_data)
-								tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & ((karyo_data$Rname==matrix_Prey[j,1]) & (karyo_data$Junction+(opt$size_pool/2) >= strtoi(matrix_Prey[j,2])) & (karyo_data$Junction-(opt$size_pool/2) <= strtoi(matrix_Prey[j,3])))),][!duprows,])
+								duprows <- rownames(karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & ((karyo_data$Rname==matrix_Prey[j,1]) & (karyo_data$Junction >= strtoi(matrix_Prey[j,2])) & (karyo_data$Junction <= strtoi(matrix_Prey[j,3])))),]) %in% rownames(tmp_karyo_data)
+								tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & ((karyo_data$Rname==matrix_Prey[j,1]) & (karyo_data$Junction >= strtoi(matrix_Prey[j,2])) & (karyo_data$Junction <= strtoi(matrix_Prey[j,3])))),][!duprows,])
 							} else if (matrix_Bait[i,2] != "" & matrix_Prey[j,2] == ""){
 								#print("Prey no position")
 								duprows <- rownames(karyo_data[(((karyo_data$B_Rname==matrix_Bait[i,1]) & (karyo_data$B_Rstart >= strtoi(matrix_Bait[i,2])) & (karyo_data$B_Rend <= strtoi(matrix_Bait[i,3]))) & (karyo_data$Rname==matrix_Prey[j,1])),]) %in% rownames(tmp_karyo_data)
 								tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[(((karyo_data$B_Rname==matrix_Bait[i,1]) & (karyo_data$B_Rstart >= strtoi(matrix_Bait[i,2])) & (karyo_data$B_Rend <= strtoi(matrix_Bait[i,3]))) & (karyo_data$Rname==matrix_Prey[j,1])),][!duprows,])
 							} else{
 								#print("Both position")
-								duprows <- rownames(karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & (karyo_data$B_Rstart >= strtoi(matrix_Bait[i,2])) & (karyo_data$B_Rend <= strtoi(matrix_Bait[i,3]))) & ((karyo_data$Rname==matrix_Prey[j,1]) & (karyo_data$Junction+(opt$size_pool/2) >= strtoi(matrix_Prey[j,2])) & (karyo_data$Junction-(opt$size_pool/2) <= strtoi(matrix_Prey[j,3]))),]) %in% rownames(tmp_karyo_data)
-								tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & (karyo_data$B_Rstart >= strtoi(matrix_Bait[i,2])) & (karyo_data$B_Rend <= strtoi(matrix_Bait[i,3]))) & ((karyo_data$Rname==matrix_Prey[j,1]) & (karyo_data$Junction+(opt$size_pool/2) >= matrix_Prey[j,2]) & (karyo_data$Junction-(opt$size_pool/2) <= matrix_Prey[j,3])),][!duprows,])
+								duprows <- rownames(karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & (karyo_data$B_Rstart >= strtoi(matrix_Bait[i,2])) & (karyo_data$B_Rend <= strtoi(matrix_Bait[i,3]))) & ((karyo_data$Rname==matrix_Prey[j,1]) & (karyo_data$Junction >= strtoi(matrix_Prey[j,2])) & (karyo_data$Junction <= strtoi(matrix_Prey[j,3]))),]) %in% rownames(tmp_karyo_data)
+								tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & (karyo_data$B_Rstart >= strtoi(matrix_Bait[i,2])) & (karyo_data$B_Rend <= strtoi(matrix_Bait[i,3]))) & ((karyo_data$Rname==matrix_Prey[j,1]) & (karyo_data$Junction >= matrix_Prey[j,2]) & (karyo_data$Junction <= matrix_Prey[j,3])),][!duprows,])
 							}
 						}
 					}
@@ -793,8 +782,8 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 								duprows <- rownames(karyo_data[(karyo_data$Rname==matrix_Prey[i,1]),]) %in% rownames(tmp_karyo_data)
 								tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[(karyo_data$Rname==matrix_Prey[i,1]),][!duprows,])
 							} else{
-								duprows <- rownames(karyo_data[(karyo_data$Rname==matrix_Prey[i,1]) & (karyo_data$Junction+(opt$size_pool/2) >= strtoi(matrix_Prey[i,2])) & (karyo_data$Junction-(opt$size_pool/2) <= strtoi(matrix_Prey[i,3])),]) %in% rownames(tmp_karyo_data)
-								tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[(karyo_data$Rname==matrix_Prey[i,1]) & (karyo_data$Junction+(opt$size_pool/2) >= strtoi(matrix_Prey[i,2])) & (karyo_data$Junction-(opt$size_pool/2) <= strtoi(matrix_Prey[i,3])),][!duprows,])
+								duprows <- rownames(karyo_data[(karyo_data$Rname==matrix_Prey[i,1]) & (karyo_data$Junction >= strtoi(matrix_Prey[i,2])) & (karyo_data$Junction <= strtoi(matrix_Prey[i,3])),]) %in% rownames(tmp_karyo_data)
+								tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[(karyo_data$Rname==matrix_Prey[i,1]) & (karyo_data$Junction >= strtoi(matrix_Prey[i,2])) & (karyo_data$Junction <= strtoi(matrix_Prey[i,3])),][!duprows,])
 							}
 						}else{
 							tmp_karyo_data <- karyo_data
@@ -823,16 +812,16 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 							tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & (karyo_data$Rname==matrix_Prey[i,1])),][!duprows,])
 						} else if (matrix_Bait[i,2] == "" & matrix_Prey[i,2] != ""){
 							#print("Bait no position")
-							duprows <- rownames(karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & ((karyo_data$Rname==matrix_Prey[i,1]) & (karyo_data$Junction+(opt$size_pool/2) >= strtoi(matrix_Prey[i,2])) & (karyo_data$Junction-(opt$size_pool/2) <= strtoi(matrix_Prey[i,3])))),]) %in% rownames(tmp_karyo_data)
-							tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & ((karyo_data$Rname==matrix_Prey[i,1]) & (karyo_data$Junction+(opt$size_pool/2) >= strtoi(matrix_Prey[i,2])) & (karyo_data$Junction-(opt$size_pool/2) <= strtoi(matrix_Prey[i,3])))),][!duprows,])
+							duprows <- rownames(karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & ((karyo_data$Rname==matrix_Prey[i,1]) & (karyo_data$Junction >= strtoi(matrix_Prey[i,2])) & (karyo_data$Junction <= strtoi(matrix_Prey[i,3])))),]) %in% rownames(tmp_karyo_data)
+							tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & ((karyo_data$Rname==matrix_Prey[i,1]) & (karyo_data$Junction >= strtoi(matrix_Prey[i,2])) & (karyo_data$Junction <= strtoi(matrix_Prey[i,3])))),][!duprows,])
 						} else if (matrix_Bait[i,2] != "" & matrix_Prey[i,2] == ""){
 							#print("Prey no position")
 							duprows <- rownames(karyo_data[(((karyo_data$B_Rname==matrix_Bait[i,1]) & (karyo_data$B_Rstart >= strtoi(matrix_Bait[i,2])) & (karyo_data$B_Rend <= strtoi(matrix_Bait[i,3]))) & (karyo_data$Rname==matrix_Prey[i,1])),]) %in% rownames(tmp_karyo_data)
 							tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[(((karyo_data$B_Rname==matrix_Bait[i,1]) & (karyo_data$B_Rstart >= strtoi(matrix_Bait[i,2])) & (karyo_data$B_Rend <= strtoi(matrix_Bait[i,3]))) & (karyo_data$Rname==matrix_Prey[i,1])),][!duprows,])
 						} else{
 							#print("Both position")
-							duprows <- rownames(karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & (karyo_data$B_Rstart >= strtoi(matrix_Bait[i,2])) & (karyo_data$B_Rend <= strtoi(matrix_Bait[i,3]))) & ((karyo_data$Rname==matrix_Prey[i,1]) & (karyo_data$Junction+(opt$size_pool/2) >= strtoi(matrix_Prey[i,2])) & (karyo_data$Junction-(opt$size_pool/2) <= strtoi(matrix_Prey[i,3]))),]) %in% rownames(tmp_karyo_data)
-							tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & (karyo_data$B_Rstart >= strtoi(matrix_Bait[i,2])) & (karyo_data$B_Rend <= strtoi(matrix_Bait[i,3]))) & ((karyo_data$Rname==matrix_Prey[i,1]) & (karyo_data$Junction+(opt$size_pool/2) >= strtoi(matrix_Prey[i,2])) & (karyo_data$Junction-(opt$size_pool/2) <= strtoi(matrix_Prey[i,3]))),][!duprows,])
+							duprows <- rownames(karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & (karyo_data$B_Rstart >= strtoi(matrix_Bait[i,2])) & (karyo_data$B_Rend <= strtoi(matrix_Bait[i,3]))) & ((karyo_data$Rname==matrix_Prey[i,1]) & (karyo_data$Junction >= strtoi(matrix_Prey[i,2])) & (karyo_data$Junction <= strtoi(matrix_Prey[i,3]))),]) %in% rownames(tmp_karyo_data)
+							tmp_karyo_data <- rbind(tmp_karyo_data, karyo_data[((karyo_data$B_Rname==matrix_Bait[i,1]) & (karyo_data$B_Rstart >= strtoi(matrix_Bait[i,2])) & (karyo_data$B_Rend <= strtoi(matrix_Bait[i,3]))) & ((karyo_data$Rname==matrix_Prey[i,1]) & (karyo_data$Junction >= strtoi(matrix_Prey[i,2])) & (karyo_data$Junction <= strtoi(matrix_Prey[i,3]))),][!duprows,])
 						}
 					}
 				}
@@ -1063,7 +1052,7 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 								#print("--------------------------------------------------------------karyo_data")
 								if (!(is.data.frame(karyo_data) && nrow(karyo_data)==0)){
 									for (j in 1:nrow(karyo_data)){
-										if ((new_chr_name == karyo_data$Rname[j]) & (strtoi(start) <= strtoi(karyo_data$Junction[j])+(opt$size_pool/2)) & (strtoi(end) >= strtoi(karyo_data$Junction[j])-(opt$size_pool/2))){
+										if ((new_chr_name == karyo_data$Rname[j]) & (strtoi(start) <= strtoi(karyo_data$Junction[j])) & (strtoi(end) >= strtoi(karyo_data$Junction[j]))){
 											karyo_data$Rname[j] <- tmp_df_rename_chrpart$new[i]
 										}
 										if ((new_chr_name == karyo_data$B_Rname[j]) & (strtoi(start) <= strtoi(karyo_data$B_Rstart[j])) & (strtoi(end) >= strtoi(karyo_data$B_Rend[j]))){
@@ -1398,7 +1387,7 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 						# REVERSE JUNCTION POSITION
 						i <- 1
 						while (i<=nrow(genes_karyo_data)){
-							result_Modify_genome_position <- Modify_genome_position(df_construction, genes_karyo_data$Rname[i],genes_karyo_data$Junction[i]-(opt$size_pool/2), genes_karyo_data$Junction[i]+(opt$size_pool/2))
+							result_Modify_genome_position <- Modify_genome_position(df_construction, genes_karyo_data$Rname[i],genes_karyo_data$Junction[i], genes_karyo_data$Junction[i])
 							genes_karyo_data$Rstart[i] <- result_Modify_genome_position[1]
 							genes_karyo_data$Rend[i] <- result_Modify_genome_position[2]
 							if (genes_karyo_data$Rstart[i] == -1 && genes_karyo_data$Rend[i] == -1){

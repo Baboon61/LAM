@@ -38,11 +38,11 @@ def usage():
 
 ##############################FUNCTIONS##############################
 
-# ALLOW TO DIVIDE ALL VALUES WITH MAX_DISTANCE_COUNT_ALL THEN REMOVE
+# ALLOW TO DIVIDE ALL VALUES WITH MAX_DISTANCE_COUNT_THEN REMOVE
 # MAX_DISTANCE_COUNT AND MAX_DISTANCE FROM DICTIONNARY
 
 
-def manageArray(dictionnary, max_distance_count_all, method):
+def manageArray(dictionnary, max_distance_count, method):
     # print(dictionnary)
     del dictionnary['max_distance']
     if dictionnary['max_distance_count'] != 0:
@@ -50,11 +50,11 @@ def manageArray(dictionnary, max_distance_count_all, method):
             if method == 0:
                 # COUNTS
                 dictionnary[key] = float(
-                    float(dictionnary[key]) / float(max_distance_count_all))
+                    float(dictionnary[key]) / float(max_distance_count))
             elif method == 1:
                 # LOG2
                 dictionnary[key] = float(float(
-                    np.log2(dictionnary[key] + 1)) / float(np.log2(max_distance_count_all + 1)))
+                    np.log2(dictionnary[key] + 1)) / float(np.log2(max_distance_count + 1)))
             else:
                 print("Wrong method use 0 or 1")
                 sys.exit(2)
@@ -147,9 +147,9 @@ def main(argv):
     try:
         method = int(method)
         if method == 0:
-            title_label = "Number of double stranded breaks at position divided by the maximum of breaks of all position"
+            title_label = "Number of double stranded breaks after the primer at each position divided by the maximum of breaks by library"
         elif method == 1:
-            title_label = "Log2 of number of double stranded breaks at position divided by log2 of the maximum of breaks of all position"
+            title_label = "Log2 of number of double stranded breaks after the primer at each position divided by log2 of the maximum of breaks by library"
         else:
             print("Error : Method option needs to be 0 or 1 !\n")
             usage()
@@ -279,7 +279,7 @@ def main(argv):
             f_tlx.readline()
             for line in f_tlx:
                 distance = int(
-                    int(line.split("\t")[9]) - int(line.split("\t")[8]))
+                    int(line.split("\t")[9]) - int(line.split("\t")[8])) - (len(metadata.loc[metadata['Library'] == label]['MID'].values[0])+len(metadata.loc[metadata['Library'] == label]['Primer'].values[0]))
                 if distance not in distance_dict["legitimates"][label]:
                     distance_dict["legitimates"][label][distance] = 1
                 else:
@@ -290,14 +290,14 @@ def main(argv):
             f_tlx.readline()
             for line in f_tlx:
                 distance = int(
-                    int(line.split("\t")[9]) - int(line.split("\t")[8]))
+                    int(line.split("\t")[9]) - int(line.split("\t")[8])) - (len(metadata.loc[metadata['Library'] == label]['MID'].values[0])+len(metadata.loc[metadata['Library'] == label]['Primer'].values[0]))
                 if distance not in distance_dict["illegitimates"][label]:
                     distance_dict["illegitimates"][label][distance] = 1
                 else:
                     distance_dict["illegitimates"][label][distance] += 1
                 total_junction += 1
 
-        # ADD MAX_DICTANCE AND MAX_DICTANCE_COUNT TO ILLEGITIMATES
+        # ADD MAX_DISTANCE AND MAX_DISTANCE_COUNT TO ILLEGITIMATES
         max_distance = 0
         max_distance_count = 0
         if len(distance_dict["illegitimates"][label]) > 0:
@@ -311,7 +311,7 @@ def main(argv):
         distance_dict["illegitimates"][label][
             "max_distance_count"] = max_distance_count
 
-        # ADD MAX_DICTANCE AND MAX_DICTANCE_COUNT TO LEGITIMATES
+        # ADD MAX_DISTANCE AND MAX_DISTANCE_COUNT TO LEGITIMATES
         max_distance = 0
         max_distance_count = 0
         if len(distance_dict["legitimates"][label]) > 0:
@@ -348,10 +348,16 @@ def main(argv):
         label = bad_label.split("/")[-1]
 
         # MANAGE ARRAYS
+        #distance_dict["illegitimates"][label] = manageArray(
+        #    distance_dict["illegitimates"][label], max_distance_count_all, method)
+        #distance_dict["legitimates"][label] = manageArray(
+        #    distance_dict["legitimates"][label], max_distance_count_all, method)
+
+        max_label_leg_ille = max(distance_dict["legitimates"][label]["max_distance_count"],distance_dict["illegitimates"][label]["max_distance_count"])
         distance_dict["illegitimates"][label] = manageArray(
-            distance_dict["illegitimates"][label], max_distance_count_all, method)
+            distance_dict["illegitimates"][label], max_label_leg_ille, method)
         distance_dict["legitimates"][label] = manageArray(
-            distance_dict["legitimates"][label], max_distance_count_all, method)
+            distance_dict["legitimates"][label], max_label_leg_ille, method)
 
         #distance_dict["illegitimates"][label] = manageArray(distance_dict["illegitimates"][label], total_junction, method)
         #distance_dict["legitimates"][label] = manageArray(distance_dict["legitimates"][label], total_junction, method)

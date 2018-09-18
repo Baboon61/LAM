@@ -615,7 +615,6 @@ def udpateMegajunctionValues(table, junction, min_pos, max_pos, chrB, min_B, max
     return junction, min_pos, max_pos, chrB, min_B, max_B
 
 # Initialize Megajunction values if none
-["Rname", "Junction", "Rstart", "Rend", "B_Rname", "B_Rstart", "B_Rend", "value"])
 
 def firstValues(table, junction, min_pos, max_pos, chrB, min_B, max_B):
     junction = int(table.split("-")[0])

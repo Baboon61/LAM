@@ -152,8 +152,8 @@ def main(argv):
     # CHECK PERCENT TRANSLOCATION CIRCOS
     try:
         percent_transloc_circos = float(percent_transloc_circos)
-        if percent_transloc_circos <= 0.0:
-            print("Error : Percent translocation option needs to be more than 0.0 !\n")
+        if percent_transloc_circos < 0.0:
+            print("Error : Percent translocation option needs to be positive !\n")
             usage()
             sys.exit(2)
     except:
@@ -164,8 +164,8 @@ def main(argv):
     # CHECK PERCENT TRANSLOCATION KARYO
     try:
         percent_transloc_karyo = float(percent_transloc_karyo)
-        if percent_transloc_karyo <= 0.0:
-            print("Error : Percent translocation option needs to be more than 0.0 !\n")
+        if percent_transloc_karyo < 0.0:
+            print("Error : Percent translocation option needs to be positive !\n")
             usage()
             sys.exit(2)
     except:
@@ -517,7 +517,7 @@ def main(argv):
             with open(dir_post + library + "/" + library + "_Karyoplot_link" + file_output_extension, 'w') as f_link:
                 spamwriter = csv.writer(f_link, delimiter='\t')
                 spamwriter.writerow(
-                    ["Rname", "Junction", "Rstart", "Rend", "B_Rname", "B_Rstart", "B_Rend"])
+                    ["Rname", "Junction", "Rstart", "Rend", "B_Rname", "B_Rstart", "B_Rend", "value"])
                 for j in final_table:
                     for key, value in j[1].items():
                         if float(value) > float(percent_transloc_karyo):
@@ -529,7 +529,7 @@ def main(argv):
                             min_B = key.split("-")[4]
                             max_B = key.split("-")[5]
                             spamwriter.writerow(
-                                [chrP, junction, min_pos, max_pos, chrB, min_B, max_B])
+                                [chrP, junction, min_pos, max_pos, chrB, min_B, max_B, value])
         # sys.exit()
 
 ##############################FUNCTIONS##############################
@@ -615,7 +615,7 @@ def udpateMegajunctionValues(table, junction, min_pos, max_pos, chrB, min_B, max
     return junction, min_pos, max_pos, chrB, min_B, max_B
 
 # Initialize Megajunction values if none
-
+["Rname", "Junction", "Rstart", "Rend", "B_Rname", "B_Rstart", "B_Rend", "value"])
 
 def firstValues(table, junction, min_pos, max_pos, chrB, min_B, max_B):
     junction = int(table.split("-")[0])

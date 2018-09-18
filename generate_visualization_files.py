@@ -22,7 +22,7 @@ import copy
 
 def usage():
     print('Usage:\n')
-    print('\tpython ' + sys.argv[0] + ' -m <metadata file> -g <genome type> -o <output mark> -r <reference fasta file> -p <postprocess directory> [-i <input mark> -s <pool size> -t <percent translocation> -b <bin size>]')
+    print('\tpython ' + sys.argv[0] + ' -m <metadata file> -g <genome type> -o <output mark> -r <reference fasta file> -p <postprocess directory> [-i <input mark> -s <pool size> -t <percent translocation in circos> -c <percent translocation in karyo> -b <bin size>]')
     print('\t\t-h or --help : display this help')
     print('\t\t-m or --file_metadata : metadata file')
     print('\t\t-g or --genome : only filter librairies results with this genome')
@@ -31,7 +31,8 @@ def usage():
     print('\t\t-p or --dir_post : postprocess directory')
     print('\t\t-i or --input_mark : marks from input file')
     print('\t\t-s or --size_pool : the number of bases between two junctions to pool them for illegitimate junctions (Default : 100)')
-    print('\t\t-t or --percent_transloc : percentage of translocation insane a size_pool to be display as link on Circos plot (Default : 2.0)')
+    print('\t\t-t or --percent_transloc_circos : percentage of translocation insane a size_pool to be display as link on Circos plot (Default : 2.0)')
+    print('\t\t-c or --percent_transloc_karyo : percentage of translocation insane a size_pool to be display as link on Karyo plot (Default : 2.0)')
     print('\t\t-b or --bin_size : size of bins to create histogram on Circos plot (Default : 5000000)')
 
 
@@ -44,7 +45,8 @@ def main(argv):
     output_mark = ""
     dir_post = ""
     size_pool = 100
-    percent_transloc = 2.0
+    percent_transloc_circos = 2.0
+    percent_transloc_karyo = 2.0
     bin_size = 5000000  # 5Mb
     file_reference = ""
     input_mark = ""
@@ -54,8 +56,8 @@ def main(argv):
     chromLength_save = {}
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'm:g:o:r:p:i:s:t:b:', ['file_metadata=', 'genome=', 'output_mark=',
-                                                                        'file_reference=', 'dir_post=', 'input_mark=', 'size_pool=', 'percent_transloc=', 'bin_size=', 'help'])
+        opts, args = getopt.getopt(sys.argv[1:], 'm:g:o:r:p:i:s:t:c:b:', ['file_metadata=', 'genome=', 'output_mark=',
+                                                                        'file_reference=', 'dir_post=', 'input_mark=', 'size_pool=', 'percent_transloc_circos_circos=', 'percent_transloc_circos_karyo=', 'bin_size=', 'help'])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -80,8 +82,10 @@ def main(argv):
             input_mark = arg
         elif opt in ('-s', '--size_pool'):
             size_pool = arg
-        elif opt in ('-t', '--percent_transloc'):
-            percent_transloc = arg
+        elif opt in ('-t', '--percent_transloc_circos'):
+            percent_transloc_circos = arg
+        elif opt in ('-c', '--percent_transloc_karyo'):
+            percent_transloc_karyo = arg
         elif opt in ('-b', '--bin_size'):
             bin_size = arg
         else:
@@ -145,10 +149,22 @@ def main(argv):
         usage()
         sys.exit(2)
 
-    # CHECK PERCENT TRANSLOCATION
+    # CHECK PERCENT TRANSLOCATION CIRCOS
     try:
-        percent_transloc = float(percent_transloc)
-        if percent_transloc <= 0.0:
+        percent_transloc_circos = float(percent_transloc_circos)
+        if percent_transloc_circos <= 0.0:
+            print("Error : Percent translocation option needs to be more than 0.0 !\n")
+            usage()
+            sys.exit(2)
+    except:
+        print("Error : You have to set a float to percent translocation option !\n")
+        usage()
+        sys.exit(2)
+
+    # CHECK PERCENT TRANSLOCATION KARYO
+    try:
+        percent_transloc_karyo = float(percent_transloc_karyo)
+        if percent_transloc_karyo <= 0.0:
             print("Error : Percent translocation option needs to be more than 0.0 !\n")
             usage()
             sys.exit(2)
@@ -204,7 +220,8 @@ def main(argv):
     print('Reference file : ' + file_reference)
     print('Postprocess directory : ' + dir_post)
     print('Size pool : ' + str(size_pool))
-    print('Percent translocation : ' + str(percent_transloc))
+    print('Percent translocation circos : ' + str(percent_transloc_circos))
+    print('Percent translocation karyo : ' + str(percent_transloc_karyo))
     print('Bin size: ' + str(bin_size))
     print('Input file extension: ' + file_input_extension)
     print('Output file extension : ' + file_output_extension)
@@ -487,7 +504,7 @@ def main(argv):
                     ["Rname", "Rstart", "Rend", "B_Rname", "B_Rstart", "B_Rend"])
                 for j in final_table:
                     for key, value in j[1].items():
-                        if float(value) > float(percent_transloc):
+                        if float(value) > float(percent_transloc_circos):
                             chrP = key.split("-")[3]
                             min_pos = key.split("-")[1]
                             max_pos = key.split("-")[2]
@@ -500,18 +517,19 @@ def main(argv):
             with open(dir_post + library + "/" + library + "_Karyoplot_link" + file_output_extension, 'w') as f_link:
                 spamwriter = csv.writer(f_link, delimiter='\t')
                 spamwriter.writerow(
-                    ["Rname", "Junction", "Rstart", "Rend", "B_Rname", "B_Rstart", "B_Rend", "value"])
+                    ["Rname", "Junction", "Rstart", "Rend", "B_Rname", "B_Rstart", "B_Rend"])
                 for j in final_table:
                     for key, value in j[1].items():
-                        chrP = key.split("-")[3]
-                        junction = key.split("-")[0]
-                        min_pos = key.split("-")[1]
-                        max_pos = key.split("-")[2]
-                        chrB = j[0]
-                        min_B = key.split("-")[4]
-                        max_B = key.split("-")[5]
-                        spamwriter.writerow(
-                            [chrP, junction, min_pos, max_pos, chrB, min_B, max_B, value])
+                        if float(value) > float(percent_transloc_karyo):
+                            chrP = key.split("-")[3]
+                            junction = key.split("-")[0]
+                            min_pos = key.split("-")[1]
+                            max_pos = key.split("-")[2]
+                            chrB = j[0]
+                            min_B = key.split("-")[4]
+                            max_B = key.split("-")[5]
+                            spamwriter.writerow(
+                                [chrP, junction, min_pos, max_pos, chrB, min_B, max_B])
         # sys.exit()
 
 ##############################FUNCTIONS##############################

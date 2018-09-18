@@ -37,7 +37,6 @@ spec = matrix(c(
 'file_locus', 'l', 2, "character", "file to set up some locus labels",
 'greek', 'k', 0, "logical", "(only if -l option), transform locus name to greek name (alpha, Alpha, beta...)",
 'unlink' , 'u', 0, "logical", "unlink the bait1/prey1, bait2/prey2 process and allows to search for bait1/prey2 junctions",
-'threshold' , 't', 2, "double", "select grouped jonctions above the threshold",
 'file_rename', 'x', 2, "character", "file to rename chromosome to a better display"
 ), byrow=TRUE, ncol=5)
 
@@ -180,7 +179,6 @@ if ( is.null(opt$UCSC ) ) { write("Warning : Do not add UCSC gene loci !",stderr
 if ( is.null(opt$file_locus ) ) { write("Warning : You will not add personal loci to the karyo plot !",stderr()); opt$file_locus = NULL; opt$greek=FALSE }
 if ( is.null(opt$greek ) ) { write("Warning : Do not change loci name with greek letters !",stderr()); opt$greek=FALSE }
 if ( is.null(opt$unlink ) ) { write("Warning : Bait and prey are linked !",stderr()); unlink=FALSE }
-if ( is.null(opt$threshold ) ) { write("Warning : You will display all grouped junctions !",stderr()); opt$threshold = FALSE }
 if ( is.null(opt$file_rename ) ) { write("Warning : You will not rename some chromosome names !",stderr()); opt$file_rename = NULL }
 
 
@@ -528,16 +526,6 @@ if (is.null(opt$unlink)){
 	unlink=TRUE
 }
 
-# CHECK THRESHOLD
-if (opt$threshold){
-	if (opt$threshold<0){
-		write("Error : The threshold should be a positive double !",stderr())
-		write("\n",stderr())
-		cat(getopt(spec, usage=TRUE))
-		q(status=1)
-	}
-}
-
 # CHECK RENAME FILE
 if (!is.null(opt$file_rename)){
 	if (!(file.exists(opt$file_rename))){
@@ -647,9 +635,6 @@ if (unlink) {
 } else{
 	write('Unlink : No',stderr())
 }
-if (opt$threshold){
-	write(paste0('Threshold : ',opt$threshold),stderr())
-}
 if (!is.null(opt$file_rename)) {
 	write(paste0('Rename file : ',opt$file_rename),stderr())
 }
@@ -688,13 +673,6 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 			}
 			# IMPORT CSV
 			karyo_data <- read.table(paste(c(opt$dir_post,as.vector(metadata$Library[library]),"/",as.vector(metadata$Library[library]),"_Karyoplot_link",file_input_extension), collapse=''), header = TRUE, sep="\t", stringsAsFactors = FALSE)
-		
-			# FILTER BY THRESHOLD
-			if (opt$threshold){
-				karyo_data <- karyo_data[karyo_data$value>=as.double(opt$threshold),]
-			} else{
-				karyo_data <- karyo_data
-			}
 
 			#print("BEFORE FILTER")
 			#print(karyo_data)

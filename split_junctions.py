@@ -755,7 +755,7 @@ def main(argv):
                     # FOCUS ON PRIMARY ASSEMBLY BECAUSE VISUALIZATION ALLOWS
                     # ONLY PRIMARY ASSEMBLY (REMOVE THIS LINE IF NECESSARY)
                     if len(row["Rname"]) <= 5 and len(row["B_Rname"]) <= 5 and row["Rname"] != "chrM" and row["B_Rname"] != "chrM":
-                        # DODGE GENOMIC BACKGROUD B6/SV129
+                        # DODGE DELETION < 15 BETWEEN PREY AND BAIT
                         if min_gap != 0:
                             if row["Rname"] == row["B_Rname"]:
                                 if row["Rend"] <= row["B_Rstart"]:
@@ -764,16 +764,16 @@ def main(argv):
                                         check_trash = True
                                         max_type = "None"
                                         max_position = "None"
-                                        best_locus = "B6/SV129_construct"
-                                        #print("Remove B6/SV129_construct")
+                                        best_locus = "Deletion"
+                                        #print("Remove Deletion")
                                 elif row["B_Rend"] <= row["Rstart"]:
                                     if row["Rstart"] - row["B_Rend"] <= min_gap:
                                         check_legitimate = False
                                         check_trash = True
                                         max_type = "None"
                                         max_position = "None"
-                                        best_locus = "B6/SV129_construct"
-                                        #print("Remove B6/SV129_construct")
+                                        best_locus = "Deletion"
+                                        #print("Remove Deletion")
                         if not check_trash:
                             # SEND IT TO LEGITIME OR ILLEGITIME TABLE
                             for index_locus, row_locus in df_legitimate_locus.iterrows():

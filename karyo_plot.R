@@ -1386,8 +1386,11 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 					genes_karyo_data$Rend <- as.numeric(as.character(genes_karyo_data$Rend))
 
 					# RETRIEVE GENES
-					genes <- RetrieveGenes(toGRanges(genes_karyo_data))
-
+					if (nrow(genes_karyo_data) > 0){
+						genes <- RetrieveGenes(toGRanges(genes_karyo_data))
+					}else{
+						genes=c()
+					}
 					# IF GENES RESULT
 					if (length(genes) != 0){
 						seqlevelsStyle(genes) <- "UCSC"

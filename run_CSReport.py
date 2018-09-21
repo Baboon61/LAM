@@ -259,7 +259,7 @@ def main(argv):
 ##############################PROGRAM##############################
 
     # IMPORT CSReport
-    from CSReport import CSReport_run, CSReport_summary, histogramStructures, sketchBP, evaluateDiversity, summarizeMotifs
+    from CSReport import CSReport_run, CSReport_summary, histogramStructures, sketchBP, SHMReport, evaluateDiversity, summarizeMotifs
 
     # LOOP OVER EACH LIBRARIES
     for library in metadata['Library'].tolist():
@@ -297,14 +297,12 @@ def main(argv):
                                     current_path = os.getcwd()
                                     os.chdir(path_to_fasta)
 
-                                    # FOR NOW DISABLE OTHER FUNCTIONS
-
-                                    # CSReport_summary(fasta[0:-6],cluster=cluster_size)
-                                    # Structures=histogramStructures(Seq=fasta[0:-6],bw=False)
-                                    # sketchBP(Seq=fasta[0:-6],Ref=file_reference[0:-6],Region1=j,Region2=k,density2D=False)
-
-                                    # evaluateDiversity(Seq=fasta[0:-6])
-                                    # summarizeMotifs(Seq=fasta[0:-6],Ref=file_reference[0:-6],Region1=j,Region2=k)
+                                    CSReport_summary(fasta[0:-6],Region1=j,Region2=k,cluster=cluster_size)
+                                    Structures=histogramStructures(Seq=fasta[0:-6],bw=False)
+                                    sketchBP(Seq=fasta[0:-6],Ref=file_reference[0:-6],Region1=j,Region2=k,density2D=False)
+                                    SHMReport(Seq=fasta[0:-6],Ref=file_reference[0:-6],Region1=j,Region2=k)
+                                    evaluateDiversity(Seq=fasta[0:-6])
+                                    summarizeMotifs(Seq=fasta[0:-6],Ref=file_reference[0:-6],Region1=j,Region2=k)
 
                                     os.chdir(current_path)
                                     shutil.move(path_to_fasta + fasta[0:-6], path_to_fasta + "CSReport" + file_input_extension[0:-6] + "/" + j.replace(
@@ -324,14 +322,12 @@ def main(argv):
                                         current_path = os.getcwd()
                                         os.chdir(path_to_fasta)
 
-                                        # FOR NOW DISABLE OTHER FUNCTIONS
-
-                                        # CSReport_summary(fasta[0:-6],cluster=cluster_size)
-                                        # Structures=histogramStructures(Seq=fasta[0:-6],bw=False)
-                                        # sketchBP(Seq=fasta[0:-6],Ref=file_reference[0:-6],Region1=k,Region2=j,density2D=False)
-
-                                        # evaluateDiversity(Seq=fasta[0:-6])
-                                        # summarizeMotifs(Seq=fasta[0:-6],Ref=file_reference[0:-6],Region1=k,Region2=j)
+                                        CSReport_summary(fasta[0:-6],Region1=k,Region2=j,cluster=cluster_size)
+                                        Structures=histogramStructures(Seq=fasta[0:-6],bw=False)
+                                        sketchBP(Seq=fasta[0:-6],Ref=file_reference[0:-6],Region1=k,Region2=j,density2D=False)
+                                        SHMReport(Seq=fasta[0:-6],Ref=file_reference[0:-6],Region1=k,Region2=j)
+                                        evaluateDiversity(Seq=fasta[0:-6])
+                                        summarizeMotifs(Seq=fasta[0:-6],Ref=file_reference[0:-6],Region1=k,Region2=j)
 
                                         os.chdir(current_path)
                                         shutil.move(path_to_fasta + fasta[0:-6], path_to_fasta + "CSReport" + file_input_extension[0:-6] + "/" + k.replace(

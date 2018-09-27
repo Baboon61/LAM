@@ -478,7 +478,8 @@ def main(argv):
         # OUTPUT RECORDS
         SeqIO.write(records, output_rename, "fasta")
 
-        sys.stdout = orig_stdout
+        if info_file != "":
+            sys.stdout = orig_stdout
 
         print("------------------------")
         print("------   MODIFY   ------")

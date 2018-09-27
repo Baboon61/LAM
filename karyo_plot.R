@@ -220,7 +220,7 @@ if (!(file.exists(opt$file_reference))){
 	chrom_fasta = readDNAStringSet(opt$file_reference)
 	for (i in 1:length(chrom_fasta)){
 		chrom_fasta_list[i+1] <- strsplit(names(chrom_fasta), " ")[[i]][1]
-		chrom_fasta_length[[strsplit(names(chrom_fasta), " ")[[i]][1]]] <- nchar(as.character(chrom_fasta[i]))
+		chrom_fasta_length[[strsplit(names(chrom_fasta), " ")[[i]][1]]] <- width(chrom_fasta[i])
 	}
 }
 

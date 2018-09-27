@@ -278,8 +278,16 @@ def main(argv):
         with open(result_file + "/" + label + "_Legitimate" + file_input_extension, 'r') as f_tlx:
             f_tlx.readline()
             for line in f_tlx:
+                if pd.isnull(metadata.loc[metadata['Library'] == label]['MID'].values[0]):
+                    len_mid = 0
+                else:
+                    len_mid = len(metadata.loc[metadata['Library'] == label]['MID'].values[0])
+                if pd.isnull(metadata.loc[metadata['Library'] == label]['Primer'].values[0]):
+                    len_primer = 0
+                else:
+                    len_primer = len(metadata.loc[metadata['Library'] == label]['Primer'].values[0])
                 distance = int(
-                    int(line.split("\t")[9]) - int(line.split("\t")[8])) - (len(metadata.loc[metadata['Library'] == label]['MID'].values[0])+len(metadata.loc[metadata['Library'] == label]['Primer'].values[0]))
+                    int(line.split("\t")[9]) - int(line.split("\t")[8])) - (len_mid + len_primer)
                 if distance not in distance_dict["legitimates"][label]:
                     distance_dict["legitimates"][label][distance] = 1
                 else:
@@ -289,8 +297,16 @@ def main(argv):
         with open(result_file + "/" + label + "_Illegitimate" + file_input_extension, 'r') as f_tlx:
             f_tlx.readline()
             for line in f_tlx:
+                if pd.isnull(metadata.loc[metadata['Library'] == label]['MID'].values[0]):
+                    len_mid = 0
+                else:
+                    len_mid = len(metadata.loc[metadata['Library'] == label]['MID'].values[0])
+                if pd.isnull(metadata.loc[metadata['Library'] == label]['Primer'].values[0]):
+                    len_primer = 0
+                else:
+                    len_primer = len(metadata.loc[metadata['Library'] == label]['Primer'].values[0])
                 distance = int(
-                    int(line.split("\t")[9]) - int(line.split("\t")[8])) - (len(metadata.loc[metadata['Library'] == label]['MID'].values[0])+len(metadata.loc[metadata['Library'] == label]['Primer'].values[0]))
+                    int(line.split("\t")[9]) - int(line.split("\t")[8])) - (len_mid + len_primer)
                 if distance not in distance_dict["illegitimates"][label]:
                     distance_dict["illegitimates"][label][distance] = 1
                 else:

@@ -443,7 +443,12 @@ def main(argv):
     ax.set_yticks(yticks)
     ax.set_yticklabels(yticklabels)
 
-    ax.set_xticks(range(0, max_distance_all + 10, 5))
+    step_length = (int(max_distance_all/100)*100)/20
+
+    if step_length == 0:
+        step_length = 5
+
+    ax.set_xticks(range(0, max_distance_all + 10, step_length))
     ax.get_xaxis().get_major_formatter().set_scientific(False)
     plt.xlabel("Position from bait primer")
     plt.axes().xaxis.set_minor_locator(MultipleLocator(1))

@@ -176,6 +176,7 @@ if ( is.null(opt$chr_bait ) ) { write("Error : -a|--chr_bait option can not be n
 if ( is.null(opt$chr_prey ) ) { write("Error : -b|--chr_prey option can not be null",stderr()); write("\n",stderr()); cat(getopt(spec, usage=TRUE)); q(status=1) }
 if ( is.null(opt$input_mark)) { write("Warning : You will process the raw file !",stderr()); opt$input_mark = "" }
 if ( is.null(opt$UCSC ) ) { write("Warning : Do not add UCSC gene loci !",stderr()); opt$UCSC=FALSE }
+if ( is.null(opt$file_construction ) ) { write("Warning : You will not add a construction file !",stderr()); opt$file_construction = NULL }
 if ( is.null(opt$file_locus ) ) { write("Warning : You will not add personal loci to the karyo plot !",stderr()); opt$file_locus = NULL; opt$greek=FALSE }
 if ( is.null(opt$greek ) ) { write("Warning : Do not change loci name with greek letters !",stderr()); opt$greek=FALSE }
 if ( is.null(opt$unlink ) ) { write("Warning : Bait and prey are linked !",stderr()); unlink=FALSE }
@@ -593,9 +594,11 @@ if (check_input_mark == "False"){
 
 # SELECT OUTPUT FILES
 if (is.null(file_input_extension )){
-	file_output_extension <- paste(c("_",opt$output_mark,".pdf"), collapse='')
+	file_output_extension_link <- paste(c("_Link_",opt$output_mark,".pdf"), collapse='')
+	file_output_extension_histo <- paste(c("_Histo_",opt$output_mark,".pdf"), collapse='')
 } else{
-	file_output_extension <- paste(c(substr(file_input_extension, 1, nchar(file_input_extension)-4),"_",opt$output_mark,".pdf"), collapse='')
+	file_output_extension_link <- paste(c(substr(file_input_extension, 1, nchar(file_input_extension)-4),"_Link_",opt$output_mark,".pdf"), collapse='')
+	file_output_extension_histo <- paste(c(substr(file_input_extension, 1, nchar(file_input_extension)-4),"_Histo_",opt$output_mark,".pdf"), collapse='')
 }
 
 ##############################PRINTS##############################
@@ -639,7 +642,8 @@ if (!is.null(opt$file_rename)) {
 	write(paste0('Rename file : ',opt$file_rename),stderr())
 }
 write(paste0('Input file extension: ',file_input_extension),stderr())
-write(paste0('Output file extension : ',file_output_extension),stderr())
+write(paste0('Output file extension for link : ',file_output_extension_link),stderr())
+write(paste0('Output file extension for histo : ',file_output_extension_histo),stderr())
 write('-----------------------------------------\n',stderr())
 
 ##############################PROGRAM##############################
@@ -650,7 +654,7 @@ names(value_color) <- c("#e5e5ff", "#ccccff", "#b2b2ff", "#9999ff", "#7f7fff", "
 
 for(library in 1:nrow(metadata[,1,drop=FALSE])){
 # TESTING ONE LIBRARY
-# for(library in 1:1){
+#for(library in 1:1){
 	# CHECK POSTPROCESS DIRECTORY EXISTS
 	if (!file.exists(paste0(opt$dir_post,as.vector(metadata$Library[library])))){
 		write(paste(c("Warning : ",opt$dir_post," does not contains {",as.vector(metadata$Library[library]),"}"), collapse=''),stderr())
@@ -812,9 +816,6 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 			###FOR UCSC GENES LATER (IF ANY)
 			genes_karyo_data <- karyo_data
 
-			# CREATE PDF NAME
-			pdf(file=paste(c(opt$dir_post,as.vector(metadata$Library[library]),"/",as.vector(metadata$Library[library]), file_output_extension), collapse=''), height=8, width=8);
-
 			# GENOME DISPLAY
 			chromosomesLength = read.table(opt$file_chrom_length, header = TRUE, sep="\t", stringsAsFactors = FALSE)
 			cytoband = read.table(opt$file_cytoband, header = TRUE, sep="\t", stringsAsFactors = FALSE)
@@ -926,7 +927,12 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 					}
 				}
 				custom.genome <- toGRanges(data.frame(tmp_custom_genome[,1], as.integer(unlist(tmp_custom_genome[,2])), as.integer(unlist(tmp_custom_genome[,3]))))
-				custom.cytobands <- toGRanges(cytoband)			
+				custom.cytobands <- toGRanges(cytoband)
+				if (file.exists(paste(c(opt$dir_post,as.vector(metadata$Library[library]),"/",as.vector(metadata$Library[library]),"_Karyoplot_freq",file_input_extension), collapse=''))){
+					custom.frequency <- toGRanges(read.table(paste(c(opt$dir_post,as.vector(metadata$Library[library]),"/",as.vector(metadata$Library[library]),"_Karyoplot_freq",file_input_extension), collapse=''), header = TRUE, sep="\t", stringsAsFactors = FALSE))
+				} else{
+					custom.frequency <- NULL
+				}
 			} else {
 				write("Error : You have to set a visualization (full_genome, selected_chromosomes or zoom_in) !",stderr())
 				write("\n",stderr())
@@ -934,7 +940,7 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 				q(status=1)
 			}
 
-			# RENAME CUSTOME.GENOME, CUSTOM.CYTOBANDS, KARYO DATA, LOCUS DATA AND CHROMOSOME NAMES
+			# RENAME CUSTOM.GENOME, CUSTOM.CYTOBANDS, KARYO DATA, LOCUS DATA, KARYO FREQ AND CHROMOSOME NAMES
 
 			if (!is.null(opt$file_rename)) {
 				# TO CHANGE FULL CHR (ex:chr9)
@@ -944,10 +950,12 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 							# CHECK FULL CHROM IN FASTA LIST
 							#print("CHECK FULL CHROM IN FASTA LIST")
 							if (tmp_df_rename_chr$current[i] %in% chrom_fasta_list){
-								# RENAME CUSTOME.GENOME
+								# RENAME CUSTOM.GENOME
 								suppressWarnings(seqlevels(custom.genome) <- sub(tmp_df_rename_chr$current[i],tmp_df_rename_chr$new[i],seqlevels(custom.genome)))
-								# RENAME CUSTOME.CYTOBANDS
+								# RENAME CUSTOM.CYTOBANDS
 								suppressWarnings(seqlevels(custom.cytobands) <- sub(tmp_df_rename_chr$current[i],tmp_df_rename_chr$new[i],seqlevels(custom.cytobands)))
+								# RENAME CUSTOM.FREQUENCY
+								suppressWarnings(seqlevels(custom.frequency) <- sub(tmp_df_rename_chr$current[i],tmp_df_rename_chr$new[i],seqlevels(custom.frequency)))
 								# RENAME KARYO DATA
 								if (!(is.data.frame(karyo_data) && nrow(karyo_data)==0)){
 									for (j in 1:nrow(karyo_data)){
@@ -1003,7 +1011,8 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 								}
 								start <- strsplit(tmp_df_rename_chrpart$current[i],":")[[1]][2]
 								end <- strsplit(tmp_df_rename_chrpart$current[i],":")[[1]][3]
-								# RENAME CUSTOME.GENOME
+
+								# RENAME CUSTOM.GENOME
 								#print("--------------------------------------------------------------custom.genome")
 								#print(custom.genome)
 								for(j in 1:length(custom.genome)) {
@@ -1025,6 +1034,15 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 								seqlevels(copy_cytoband)<- sub(new_chr_name,tmp_df_rename_chrpart$new[i],seqlevels(copy_cytoband)) 
 								suppressWarnings(custom.cytobands <- append(custom.cytobands, copy_cytoband))
 								#print(custom.cytobands)
+
+								# RENAME CUSTOM.FREQUENCY
+								#print("--------------------------------------------------------------custom.frequency")
+								copy_frequency <- custom.frequency[(seqnames(custom.frequency) == new_chr_name) & (end(custom.frequency) >= strtoi(start)) & (start(custom.frequency) < strtoi(end))]
+								
+								start(copy_frequency[1]) <- strtoi(start)
+								end(copy_frequency[length(copy_frequency)]) <- strtoi(end)
+								seqlevels(copy_frequency)<- sub(new_chr_name,tmp_df_rename_chrpart$new[i],seqlevels(copy_frequency)) 
+								suppressWarnings(custom.frequency <- append(custom.frequency, copy_frequency))
 								
 								# RENAME KARYO DATA
 								#print("--------------------------------------------------------------karyo_data")
@@ -1074,7 +1092,9 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 			#print(custom.genome)
 
 			# APPLY SCALE MODIFICATION TO ALL VALUES (GENOME, CYTOBANDS, LOCUS, KARYO DATA) IF MORE THAN 1 CHR TO DISPLAY
-			tmp_granges <- GRanges(c(seqnames=NULL,ranges=NULL,strand=NULL))
+			#print("SCALE MODIF")
+			tmp_granges_cytobands <- GRanges(c(seqnames=NULL,ranges=NULL,strand=NULL))
+			tmp_granges_frequency <- GRanges(c(seqnames=NULL,ranges=NULL,strand=NULL))
 			if (!is.null(opt$file_locus)) {
 				tmp_locus <- df_locus[FALSE,]
 			}
@@ -1084,32 +1104,28 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 				max_width = max(width(custom.genome))
 				# SCALE CUSTOM.GENOME
 				for (i in 1:length(custom.genome)){
+					#print(custom.genome[i])
 					#print("WHAT WE WANT TO MODIFY")
 					#print(custom.genome[i])
-
 					# SAVE OLD VALUES
 					old_start <- start(custom.genome[i])
 					old_end <- end(custom.genome[i])
-
 					# SET UP SCALE
 					width_current <- width(custom.genome[i])
 					scale_current <- trunc(max_width/width_current)
-
 					#print("SCALE")
 					#print(scale_current)
 
 					# MODIFY START AND END OF GENOME
 					start(custom.genome[i]) <- 1
 					end(custom.genome[i]) <- width_current*scale_current
-
-					# SCALE CUSTOME.CYTOBANDS
+					# SCALE CUSTOM.CYTOBANDS
 					tmp_cytobands <- custom.cytobands[(seqnames(custom.cytobands) == as.character(seqnames(custom.genome[i]))) & (end(custom.cytobands) >= strtoi(old_start)) & (start(custom.cytobands) < strtoi(old_end))]
-
 					# AJUST START(1) AND END(-1) WITH THE GENOME START AND END
 					#print("UNSCALED CYTOBAND")
-					start(tmp_cytobands[1]) <- old_start
 					end(tmp_cytobands[length(tmp_cytobands)]) <- old_end
 					#print(tmp_cytobands)
+					#print("CYTOBANDS")
 					# CHANGE CYTOBANDS
 					if (length(tmp_cytobands) == 1){
 						start(tmp_cytobands[1]) <- 1
@@ -1131,8 +1147,24 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 							}	
 						}
 					}
-					tmp_granges <- append(tmp_granges, tmp_cytobands)
-
+					tmp_granges_cytobands <- append(tmp_granges_cytobands, tmp_cytobands)
+					#print("FREQUENCY")
+					# SCALE CUSTOM.FREQUENCY
+					tmp_frequency <- custom.frequency[(seqnames(custom.frequency) == as.character(seqnames(custom.genome[i]))) & (end(custom.frequency) >= strtoi(old_start)) & (start(custom.frequency) < strtoi(old_end))]
+					#print(tmp_frequency)
+					# AJUST START(1) AND END(-1) WITH THE GENOME START AND END
+					#print("UNSCALED FREQUENCY")
+					start(tmp_frequency[1]) <- old_start
+					end(tmp_frequency[length(tmp_frequency)]) <- old_end
+					#print(tmp_frequency)
+					# CHANGE FREQUENCY
+					start1 <- strtoi(((start(tmp_frequency[1]) - strtoi(old_start)) * scale_current)+1)
+					start(tmp_frequency) <- strtoi(((start(tmp_frequency) - strtoi(old_start))+1) * scale_current)
+					end(tmp_frequency) <- strtoi(((end(tmp_frequency) - strtoi(old_start))+1) * scale_current)
+					start(tmp_frequency[1]) <- start1
+					#print("OUT FREQUENCY")
+					tmp_granges_frequency <- append(tmp_granges_frequency, tmp_frequency)
+					#print("DATA")
 					# SCALE KARYO DATA
 					if (!(is.data.frame(karyo_data) && nrow(karyo_data)==0)){
 						for (j in 1:nrow(karyo_data)){
@@ -1147,6 +1179,7 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 							}
 						}
 					}
+					#print("LOCUS")
 					# SCALE LOCUS
 					if (!is.null(opt$file_locus)) {
 						if (!(is.data.frame(df_locus) && nrow(df_locus)==0)){
@@ -1163,12 +1196,14 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 					}
 
 				}
-				custom.cytobands <- tmp_granges
+				custom.cytobands <- tmp_granges_cytobands
+				custom.frequency <- tmp_granges_frequency
+				tmp_granges_frequency <- NULL
 				if (!is.null(opt$file_locus)) {
 					df_locus <- tmp_locus
 				}
 			}
-
+			#print("END SCALE MODIF")
 			#print("SCALED GENOMES")
 			#print(custom.genome)
 			#print("SCALED CYTOBANDS")
@@ -1181,28 +1216,29 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 			#print("SCALED LOCUS")
 			#print(df_locus)
 
-			pp <- getDefaultPlotParams(plot.type=1)
+			# MODIFY CUSTOME.FREQUENCY TO FAKE READ NUMBER TO PLOT A DENSITY
+			if (!is.null(custom.frequency)){
 
-			#CHANGE THE IDEOGRAM HEIGHT PARAM TO CREATE THICKER IDEOGRAMS 
-			pp$ideogramheight <- 1
+				custom.frequency.plus <- custom.frequency[custom.frequency$Strand == '+']
+				tmp_granges_frequency <- GRanges(c(seqnames=NULL,ranges=NULL,strand=NULL, Data=NULL, Strand=NULL))
+				for (i in 1:length(custom.frequency.plus)){
+					if (custom.frequency.plus[i]$Data != 0){
+						factor <- round(custom.frequency.plus[i]$Data*1000)
+						tmp_granges_frequency <- append(tmp_granges_frequency, custom.frequency.plus[rep(i, factor), ])
+					}
+				}
+				custom.frequency.plus <- tmp_granges_frequency
 
-			# SET UP KARYOPLOT
-			kp <- plotKaryotype(genome = custom.genome, cytobands = custom.cytobands, main = expression("Karyoplot of double stranded break areas"), cex=0.6, plot.params=pp)
-
-			# ADD TICK MARKERS IF NOT ZOOM IN AND SOLO CUSTOM GENOME
-			if (!(opt$visualization == "zoom_in" & length(custom.genome) > 1)){
-				metric <- 10^(strtoi(nchar(toString(max(width(custom.genome)))))-2)
-				kpAddBaseNumbers(kp, tick.dist = metric, tick.len = 15, tick.col="red", cex=0.4, minor.tick.dist = metric/10, minor.tick.len = 5, minor.tick.col = "gray")
+				custom.frequency.minus <- custom.frequency[custom.frequency$Strand == '-']
+				tmp_granges_frequency <- GRanges(c(seqnames=NULL,ranges=NULL,strand=NULL, Data=NULL, Strand=NULL))
+				for (i in 1:length(custom.frequency.minus)){
+					if (custom.frequency.minus[i]$Data != 0){
+						factor <- round(custom.frequency.minus[i]$Data*1000)
+						tmp_granges_frequency <- append(tmp_granges_frequency, custom.frequency.minus[rep(i, factor), ])
+					}
+				}
+				custom.frequency.minus <- tmp_granges_frequency
 			}
-			if (!is.null(opt$file_locus)) {
-				kpPlotRegions(kp, toGRanges(df_locus), col="#FFEECC", r0=0.05, r1=0)
-			}
-
-			#print("DATA")
-			#print(karyo_data)
-
-			# ADD LINKS AND REGIONS
-			total_bin <- LinksAndRegions(kp, karyo_data, value_color, 6, 0.05, 0.2, 0.05, 0.08)
 
 			# DISPLAY LOCUS FILE INFORMATION
 			if (!is.null(opt$file_locus)) {
@@ -1311,6 +1347,37 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 					}
 				}
 			}
+
+			pp <- getDefaultPlotParams(plot.type=1)
+
+			# CHANGE THE IDEOGRAM HEIGHT PARAM TO CREATE THICKER IDEOGRAMS 
+			pp$ideogramheight <- 0
+
+			# SET UP KARYOPLOT
+			#print("custom.genome")
+			#print(custom.genome)
+
+			# OUTPUT LINK PDF
+			
+			# CREATE PDF NAME
+			pdf(file=paste(c(opt$dir_post,as.vector(metadata$Library[library]),"/",as.vector(metadata$Library[library]), file_output_extension_link), collapse=''), height=8, width=8);
+			
+			#kp_link <- plotKaryotype(genome = custom.genome, cytobands = custom.cytobands, main = expression("Karyoplot of double stranded break areas"), cex=0.6, plot.params=pp)
+			kp_link <- plotKaryotype(genome = custom.genome, cytobands = custom.cytobands, main = expression("Karyoplot of double stranded break areas"), cex=0.6, ideogram.plotter=NULL)
+
+			# ADD TICK MARKERS IF NOT ZOOM IN AND SOLO CUSTOM GENOME
+			if (!(opt$visualization == "zoom_in" & length(custom.genome) > 1)){
+				metric <- 10^(strtoi(nchar(toString(max(width(custom.genome)))))-2)
+				kpAddBaseNumbers(kp_link, tick.dist = metric, tick.len = 15, tick.col="red", cex=0.4, minor.tick.dist = metric/10, minor.tick.len = 5, minor.tick.col = "gray")
+			}
+			if (!is.null(opt$file_locus)) {
+				kpPlotRegions(kp_link, toGRanges(df_locus), col="#7c7c7c", border="#000000", r0=0, r1=0.05)
+			}
+			#print("DATA")
+			#print(karyo_data)
+
+			# ADD LINKS AND REGIONS
+			total_bin <- LinksAndRegions(kp_link, karyo_data, value_color, 6, 0.11, 0.26, 0.06, 0.11)
 			# UCSC GENES
 			if (opt$UCSC) {
 				# SET UP DATAFRAME
@@ -1403,15 +1470,47 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 							}
 						}
 						# PRINT GENES
-						suppressWarnings(kpPlotMarkers(kp, data=genes, text.orientation = "vertical", labels=genes$external_gene_name, r1=0.2, cex=0.3, adjust.label.position = TRUE))
+						suppressWarnings(kpPlotMarkers(kp_link, data=genes, text.orientation = "vertical", label.color="black", labels=genes$external_gene_name, r0=0, r1=-0.05, cex=0.3, adjust.label.position = TRUE))
 					}
 				}
 			}
 			# PRINT LOCI
 			if (!is.null(opt$file_locus)) {
-				kpPlotMarkers(kp, data=toGRanges(df_locus), text.orientation = "vertical", label.color="red", labels=names_markers, r1=0.2, cex=0.4, adjust.label.position = TRUE, label.margin=3)
+				#kpPlotMarkers(kp_link, data=toGRanges(df_locus), text.orientation = "horizontal", label.color="black", labels=names_markers, label.margin=0, r0=0.15, r1=0.1, cex=0.4, marker.parts=c(0,0,0), adjust.label.position = TRUE)
+				kpPlotMarkers(kp_link, data=toGRanges(df_locus), text.orientation = "horizontal", label.color="black", labels=names_markers, r0=0, r1=-0.05, marker.parts=c(0,00,0), cex=0.4, adjust.label.position = FALSE)
 			}
 
+			# CLOSE THE GRAPHIC DEVICE AND CLEAR MEMORY
+			dev.off()
+
+			# OUTPUT HISTO PDF
+
+			# CREATE PDF NAME
+			pdf(file=paste(c(opt$dir_post,as.vector(metadata$Library[library]),"/",as.vector(metadata$Library[library]), file_output_extension_histo), collapse=''), height=8, width=8);
+
+			seqlevels(custom.genome) <- c(as.character(seqnames(custom.genome)))
+
+			kp_histo <- plotKaryotype(genome = custom.genome, cytobands = custom.cytobands, main = expression("Karyoplot of double stranded break areas"), cex=0.6, ideogram.plotter=NULL)
+
+			if (length(custom.frequency.minus) > 0){
+				kpPlotCoverage(kp_histo, data=custom.frequency.minus, r0=0.5, r1=0.05, col="#eb0c0c",ymax=15000, clipping=FALSE, show.0.cov=FALSE)
+			}
+			if (length(custom.frequency.plus) > 0){
+				kpPlotCoverage(kp_histo, data=custom.frequency.plus, r0=0.5, r1=0.95, col="#20eb0d",ymax=15000, clipping=FALSE, show.0.cov=FALSE)
+			}
+
+			# ADD TICK MARKERS IF NOT ZOOM IN AND SOLO CUSTOM GENOME
+			if (!(opt$visualization == "zoom_in" & length(custom.genome) > 1)){
+				metric <- 10^(strtoi(nchar(toString(max(width(custom.genome)))))-2)
+				kpAddBaseNumbers(kp_histo, tick.dist = metric, tick.len = 15, tick.col="red", cex=0.4, minor.tick.dist = metric/10, minor.tick.len = 5, minor.tick.col = "gray")
+			}
+			if (!is.null(opt$file_locus)) {
+				kpPlotRegions(kp_histo, toGRanges(df_locus), col="#7c7c7c", border="#000000", r0=0, r1=0.05)
+			}
+			# PRINT LOCI
+			if (!is.null(opt$file_locus)) {
+				kpPlotMarkers(kp_histo, data=toGRanges(df_locus), text.orientation = "horizontal", label.color="black", labels=names_markers, r0=0, r1=-0.05, marker.parts=c(0,00,0), cex=0.4, adjust.label.position = FALSE)
+			}
 			# CLOSE THE GRAPHIC DEVICE AND CLEAR MEMORY
 			dev.off()
 		}

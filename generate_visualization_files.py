@@ -1,4 +1,4 @@
-# A script allowing to create 3 files to visualize LAM-HTGTS result on a
+# A script allowing to create 4 files to visualize LAM-HTGTS result on a
 # proper Circos plot & Karyoplot
 
 ##############################IMPORTS##############################
@@ -22,13 +22,14 @@ import copy
 
 def usage():
     print('Usage:\n')
-    print('\tpython ' + sys.argv[0] + ' -m <metadata file> -g <genome type> -o <output mark> -r <reference fasta file> -p <postprocess directory> [-i <input mark> -s <pool size> -t <percent translocation in circos> -c <percent translocation in karyo> -b <bin size>]')
+    print('\tpython ' + sys.argv[0] + ' -m <metadata file> -g <genome type> -o <output mark> -r <reference fasta file> -p <postprocess directory> -q <legitimate file> [-i <input mark> -s <pool size> -t <percent translocation in circos> -c <percent translocation in karyo> -b <bin size>]')
     print('\t\t-h or --help : display this help')
     print('\t\t-m or --file_metadata : metadata file')
     print('\t\t-g or --genome : only filter librairies results with this genome')
     print('\t\t-o or --output_mark : mark added to the output file')
     print('\t\t-r or --file_reference : reference fasta file')
     print('\t\t-p or --dir_post : postprocess directory')
+    print('\t\t-q or --file_legitimate : legitimate positions (bait, prey, start, end, flag)')
     print('\t\t-i or --input_mark : marks from input file')
     print('\t\t-s or --size_pool : the number of bases between two junctions to pool them for illegitimate junctions (Default : 100)')
     print('\t\t-t or --percent_transloc_circos : percentage of translocation insane a size_pool to be display as link on Circos plot (Default : 2.0)')
@@ -49,15 +50,17 @@ def main(argv):
     percent_transloc_karyo = 2.0
     bin_size = 5000000  # 5Mb
     file_reference = ""
+    file_legitimate = ""
     input_mark = ""
     file_input_extension = ""
     file_output_extension = ""
 
     chromLength_save = {}
+    chromLengthStrictBin_save = {}
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'm:g:o:r:p:i:s:t:c:b:', ['file_metadata=', 'genome=', 'output_mark=',
-                                                                        'file_reference=', 'dir_post=', 'input_mark=', 'size_pool=', 'percent_transloc_circos_circos=', 'percent_transloc_circos_karyo=', 'bin_size=', 'help'])
+        opts, args = getopt.getopt(sys.argv[1:], 'm:g:o:r:p:q:i:s:l:t:c:b:', ['file_metadata=', 'genome=', 'output_mark=',
+                                                                        'file_reference=', 'dir_post=', 'file_legitimate=', 'input_mark=', 'size_pool=', 'percent_transloc_circos_circos=', 'percent_transloc_circos_karyo=', 'bin_size=', 'help'])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -78,6 +81,8 @@ def main(argv):
             file_reference = arg
         elif opt in ('-p', '--dir_post'):
             dir_post = arg
+        elif opt in ('-q', '--file_legitimate'):
+            file_legitimate = arg
         elif opt in ('-i', '--input_mark'):
             input_mark = arg
         elif opt in ('-s', '--size_pool'):
@@ -136,6 +141,64 @@ def main(argv):
     else:
         if dir_post[-1] != "/":
             dir_post += "/"
+
+    # CHECK LEGITIME FILE
+    if file_legitimate == "" or not os.path.exists(file_legitimate):
+        print("Error : You have to set a legitimate file !\n")
+        usage()
+        sys.exit(2)
+    else:
+        # READ LEGITIME FILE
+        df_legitimate_locus = pd.read_table(
+            file_legitimate, sep='\t', header=None)
+        for index, row in df_legitimate_locus.iterrows():
+            if row[0][0:3] != 'chr':
+                print("Error : line." + str(index + 1) +
+                      ", col.1 of your legitimate locus file !\n")
+                print("Error : Unknown chromosome : " + row[0] + " !\n")
+                usage()
+                sys.exit(2)
+            if row[1][0:3] != 'chr':
+                print("Error : line." + str(index + 1) +
+                      ", col.2 of your legitimate locus file !\n")
+                print("Error : Unknown chromosome : " + row[1] + " !\n")
+                usage()
+                sys.exit(2)
+            try:
+                if int(row[2]) < 1:
+                    print("Error : line." + str(index + 1) +
+                          ", col.3 of your legitimate locus file !\n")
+                    print("Error : Start position has to be positive integer !\n")
+                    usage()
+                    sys.exit(2)
+            except:
+                print("Error : line." + str(index + 1) +
+                      ", col.3 of your legitimate locus file !\n")
+                print("Error : Unknown start position : " +
+                      str(row[2]) + " !\n")
+                usage()
+                sys.exit(2)
+
+            try:
+                if int(row[3]) < 1:
+                    print("Error : line." + str(index + 1) +
+                          ", col.4 of your legitimate locus file !\n")
+                    print("Error : End position has to be positive integer !\n")
+                    usage()
+                    sys.exit(2)
+            except:
+                print("Error : line." + str(index + 1) +
+                      ", col.4 of your legitimate locus file !\n")
+                print("Error : Unknown end position : " + str(row[3]) + " !\n")
+                usage()
+                sys.exit(2)
+
+            if int(row[3]) < int(row[2]):
+                print("Error : line." + str(index + 1) +
+                      " of your legitimate locus file !\n")
+                print("Error : End position is smaller than start position !\n")
+                usage()
+                sys.exit(2)
 
     # CHECK SIZE POOL
     try:
@@ -219,6 +282,7 @@ def main(argv):
     print('Genome : ' + genome)
     print('Reference file : ' + file_reference)
     print('Postprocess directory : ' + dir_post)
+    print('Legitimate locus file : ' + file_legitimate)
     print('Size pool : ' + str(size_pool))
     print('Percent translocation circos : ' + str(percent_transloc_circos))
     print('Percent translocation karyo : ' + str(percent_transloc_karyo))
@@ -231,11 +295,17 @@ def main(argv):
 
     # HIT TABLE INITIALISATION (BINS CREATION FOR HISTOGRAM)
     chromLength_save = getChromLength(file_reference, bin_size)
+    
+    # HIT TABLE INITIALISATION (BINS CREATION FOR HISTOGRAM)
+    chromLengthStrictBin_save = getChromLengthStrictBin(file_reference, size_pool, df_legitimate_locus)
+
     # LOOP OVER EACH LIBRARIES
     for library in metadata['Library'].tolist():
         print(library)
         chromLength = {}
         chromLength = copy.deepcopy(chromLength_save)
+        chromLengthStrictBinPlus = copy.deepcopy(chromLengthStrictBin_save)
+        chromLengthStrictBinMinus = copy.deepcopy(chromLengthStrictBin_save)
         # CHECK DIRECTORY EXISTS
         if not os.path.exists(dir_post + library):
             print("Warning : " + dir_post +
@@ -271,6 +341,15 @@ def main(argv):
             df = pd.concat([df_legitimate, df_illegitimate], ignore_index=True)
             df = df.sort_values(['Rname', 'Junction'], ascending=[True, True])
 
+            # OUTPUT DISTRIBUTION FILE
+            with open(dir_post + library + "/" + library + "_Distribution" + file_output_extension, 'w') as f_link:
+                spamwriter = csv.writer(f_link, delimiter='\t')
+                spamwriter.writerow(
+                    ["Chromosome", "Start", "End", "Strand"])
+                for index, row in df.iterrows():
+                        spamwriter.writerow(
+                            [row['Rname'], row['Junction'], row['Junction'], row['Strand']])
+
             # FIND NUMBER OF JUNCTION IN BINS ACCORDING TO THE JUNCTION VALUE
             # E.G if bin_size = 100
             # 14950 go to 14900 bin
@@ -280,6 +359,7 @@ def main(argv):
             total_mutation = 0
             check = False
 
+            # FILL DICTIONNARY FOR CIRCOS HISTOGRAM
             for index, row in df.iterrows():
                 if row['Rname'] in chromLength:
                     for key, value in chromLength[row['Rname']].items():
@@ -297,6 +377,42 @@ def main(argv):
                         chromLength[key][key2] = float(
                             float(chromLength[key][key2]) / float(total_mutation) * 100)
 
+
+            # FILL DICTIONNARY FOR KARYO PLOT FREQUENCY
+            # ONLY KEEP LEGITIME JUNCTIONS
+
+            for index, row in df_legitimate.iterrows():
+                if row['Strand'] == 1:
+                    if row['Rname'] in chromLengthStrictBinPlus:
+                        for key, value in chromLengthStrictBinPlus[row['Rname']].items():
+                            # print(row['Junction'])
+                            # print(str(key))
+                            if int(row['Junction']) <= key and int(row['Junction']) > (key - size_pool):
+                                chromLengthStrictBinPlus[row['Rname']][key] += 1
+                                break
+                else:
+                    if row['Rname'] in chromLengthStrictBinMinus:
+                        for key, value in chromLengthStrictBinMinus[row['Rname']].items():
+                            # print(row['Junction'])
+                            # print(str(key))
+                            if int(row['Junction']) <= key and int(row['Junction']) > (key - size_pool):
+                                chromLengthStrictBinMinus[row['Rname']][key] += 1
+                                break
+
+            # TRANSFORM THE NUMBER OF JUNCTION BY PERCENTAGE OF TRANSFORMATION FOR PLUS
+            for key, value in chromLengthStrictBinPlus.items():
+                for key2, value2 in chromLengthStrictBinPlus[key].items():
+                    if chromLengthStrictBinPlus[key][key2] != 0:
+                        chromLengthStrictBinPlus[key][key2] = float(
+                            float(chromLengthStrictBinPlus[key][key2]) / float(len(df_legitimate)) * 100)
+            # TRANSFORM THE NUMBER OF JUNCTION BY PERCENTAGE OF TRANSFORMATION FOR MINUS
+            for key, value in chromLengthStrictBinMinus.items():
+                for key2, value2 in chromLengthStrictBinMinus[key].items():
+                    if chromLengthStrictBinMinus[key][key2] != 0:
+                        chromLengthStrictBinMinus[key][key2] = float(
+                            float(chromLengthStrictBinMinus[key][key2]) / float(len(df_legitimate)) * 100)
+
+
             # HISTOGRAM FILE CREATION
             Rname_list = []
             Rstart_list = []
@@ -312,7 +428,7 @@ def main(argv):
                         Data_list.append(value_inside)
                     else:
                         Rname_list.append(key)
-                        Rstart_list.append(int(key_inside - (bin_size + 1)))
+                        Rstart_list.append(int(key_inside - (bin_size - 1)))
                         Rend_list.append(key_inside)
                         Data_list.append(value_inside)
 
@@ -322,6 +438,51 @@ def main(argv):
             dfHisto = dfHisto[['Rname', 'Rstart', 'Rend', 'Data']]
             dfHisto = dfHisto.sort_values(
                 ['Rname', 'Rstart'], ascending=[True, True])
+
+            # KARYO PLUS FILE CREATION
+            Rname_list = []
+            Rstart_list = []
+            Rend_list = []
+            Data_list = []
+            Strand_list = []
+            dfKaryoFreq = pd.DataFrame(columns=['Rname', 'Rstart', 'Rend', 'Data', 'Strand'])
+            for key, value in chromLengthStrictBinPlus.items():
+                for key_inside, value_inside in value.items():
+                    if key_inside - size_pool <= 0:
+                        Rname_list.append(key)
+                        Rstart_list.append(1)
+                        Rend_list.append(key_inside)
+                        Data_list.append(value_inside)
+                        Strand_list.append("+")
+                    else:
+                        Rname_list.append(key)
+                        Rstart_list.append(int(key_inside - (size_pool - 1)))
+                        Rend_list.append(key_inside)
+                        Data_list.append(value_inside)
+                        Strand_list.append("+")
+            for key, value in chromLengthStrictBinMinus.items():
+                for key_inside, value_inside in value.items():
+                    if key_inside - size_pool <= 0:
+                        Rname_list.append(key)
+                        Rstart_list.append(1)
+                        Rend_list.append(key_inside)
+                        Data_list.append(value_inside)
+                        Strand_list.append("-")
+                    else:
+                        Rname_list.append(key)
+                        Rstart_list.append(int(key_inside - (size_pool - 1)))
+                        Rend_list.append(key_inside)
+                        Data_list.append(value_inside)
+                        Strand_list.append("-")
+
+            dfKaryoFreq = pd.DataFrame({'Rname': pd.Series(Rname_list, dtype=str), 'Rstart': pd.Series(
+                Rstart_list, dtype=int), 'Rend': pd.Series(Rend_list, dtype=int), 'Data': pd.Series(Data_list, dtype=float), 'Strand': pd.Series(Strand_list, dtype=str)})
+
+            dfKaryoFreq = dfKaryoFreq[['Rname', 'Rstart', 'Rend', 'Data', 'Strand']]
+            dfKaryoFreq = dfKaryoFreq.sort_values(
+                ['Strand', 'Rname', 'Rstart'], ascending=[True, True, True])
+
+
 
             # Link modification, keep link above a percentage of translocation
             # PUT df Rname, start and end in array
@@ -489,13 +650,16 @@ def main(argv):
 
             # i=0
             # while i<len(df["Qname"]):
-            #	df["Qname"][i]=df["Qname"][i].split(":")[0]+":"+df["Qname"][i].split(":")[-2]+":"+df["Qname"][i].split(":")[-1]
-            #	i+=1
+            #    df["Qname"][i]=df["Qname"][i].split(":")[0]+":"+df["Qname"][i].split(":")[-2]+":"+df["Qname"][i].split(":")[-1]
+            #    i+=1
             # dfNormal=df
             #dfNormal[["Rname", "Rstart", "Rend", "Qname"]].to_csv(output+"normal.csv", sep='\t', encoding='utf-8', index=False)
 
             dfHisto[["Rname", "Rstart", "Rend", "Data"]].to_csv(
                 dir_post + library + "/" + library + "_Histo" + file_output_extension, sep='\t', encoding='utf-8', index=False)
+
+            dfKaryoFreq[["Rname", "Rstart", "Rend", "Data", "Strand"]].to_csv(
+                dir_post + library + "/" + library + "_Karyoplot_freq" + file_output_extension, sep='\t', encoding='utf-8', index=False)
 
             chrP = ""
             with open(dir_post + library + "/" + library + "_Link" + file_output_extension, 'w') as f_link:
@@ -547,7 +711,7 @@ def iterate(iterable):
 
     yield item, None
 
-# Initialize bin for histogram representation in circos
+# Initialize bin for histogram representation in circos plot
 
 
 def getChromLength(file_reference, bin_size):
@@ -558,7 +722,7 @@ def getChromLength(file_reference, bin_size):
         for record in SeqIO.parse(file_reference, 'fasta')
         if record.id not in chrom_dict
     }
-    # Bin creation by chromosome starting from the highest Rend of the prey,
+    # Bin creation by chromosome starting from the end of each chromosome,
     # create bin_size bin size
     for key, value in chrom_dict.items():
         max_value = value
@@ -567,6 +731,25 @@ def getChromLength(file_reference, bin_size):
             chromLength[key][int(max_value)] = 0
             max_value -= bin_size
         chromLength[key][int(max_value)] = 0
+        chromLength[key] = collections.OrderedDict(
+            sorted(chromLength[key].items()))
+    return chromLength
+
+# Initialize bin for frequency representation in karyo plot
+
+def getChromLengthStrictBin(file_reference, bin_size, df_legitimate_locus):
+    chromLength = {}
+    chrom_dict = {}
+    for index, row in df_legitimate_locus.iterrows():
+        key = row[1]
+        start = row[2]
+        end = row[3]
+        chromLength[key] = {}
+        while start+bin_size < end:
+            start += bin_size
+            chromLength[key][start] = 0
+        chromLength[key][start] = 0
+        chromLength[key][end] = 0
         chromLength[key] = collections.OrderedDict(
             sorted(chromLength[key].items()))
     return chromLength

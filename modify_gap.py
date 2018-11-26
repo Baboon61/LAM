@@ -1,4 +1,4 @@
-# A script allowing to modify a cytoband file according the modification
+# A script allowing to modify a gap file according the modification
 # apply to a genome. Modification information saved in an other file
 
 ##############################IMPORTS##############################
@@ -19,11 +19,11 @@ import collections
 def usage():
     print('Usage:\n')
     print('\tpython ' +
-          sys.argv[0] + ' -g <genome type> -r <reference fasta file> -y <cytoband file> [-c <contruction fasta file>]')
+          sys.argv[0] + ' -g <genome type> -r <reference fasta file> -w <gap file> [-c <contruction fasta file>]')
     print('\t\t-h or --help : display this help')
-    print('\t\t-g or --genome : will add the genome name to the cytoband file name')
+    print('\t\t-g or --genome : will add the genome name to the gap file name')
     print('\t\t-r or --file_reference : reference fasta file')
-    print('\t\t-y or --file_cytoband : cytoband file')
+    print('\t\t-w or --file_gap : gap file')
     print('\t\t-c or --file_construction : construction fasta file for modified genome (in $BOWTIE2_INDEXES)')
 
 
@@ -31,7 +31,7 @@ def main(argv):
 
     genome = ""
     file_reference = ""
-    file_cytoband = ""
+    file_gap = ""
     file_construction = ""
 
     chrom_dict = {}
@@ -39,8 +39,8 @@ def main(argv):
         columns=["chr", "modif_type", "length", "start", "end", "seq"])
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'g:r:y:c:', [
-                                   'genome=', 'file_reference=', 'file_cytoband=', 'file_construction=', 'help'])
+        opts, args = getopt.getopt(sys.argv[1:], 'g:r:w:c:', [
+                                   'genome=', 'file_reference=', 'file_gap=', 'file_construction=', 'help'])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -55,8 +55,8 @@ def main(argv):
             genome = arg
         elif opt in ('-r', '--file_reference'):
             file_reference = arg
-        elif opt in ('-y', '--file_cytoband'):
-            file_cytoband = arg
+        elif opt in ('-w', '--file_gap'):
+            file_gap = arg
         elif opt in ('-c', '--file_construction'):
             file_construction = arg
         else:
@@ -85,16 +85,17 @@ def main(argv):
             if record.id not in chrom_dict
         }
 
-    # CHECK CYTOBAND FILE
-    if file_cytoband == "" or not os.path.exists(file_cytoband):
-        print("Error : You have to set a cytoband file !\n")
+    # CHECK GAP FILE
+    if file_gap == "" or not os.path.exists(file_gap):
+        print("Error : You have to set a gap file !\n")
         usage()
         sys.exit(2)
     else:
-        # READ CYTOBAND FILE
-        df_cytoband = pd.read_table(file_cytoband, sep='\t', names=[
-                                    "Chromosome", "Start", "End", "Band", "Stain"])
-        df_cytoband = df_cytoband.sort_values(
+        # READ GAP FILE
+        df_gap = pd.read_table(file_gap, sep='\t', names=[
+                                    "Id", "Chromosome", "Start", "End", "Number", "N", "Length", "Location", "No"])
+        df_gap.drop(["Id","Number", "N", "Length", "No"], inplace=True, axis=1)
+        df_gap = df_gap.sort_values(
             ['Chromosome', "Start"], ascending=[True, True])
 
     # IF CONSTRUCTION OPTION IS SET
@@ -247,12 +248,12 @@ def main(argv):
     print('\n-----------------------------------------')
     print('Genome : ' + genome)
     print('Reference file : ' + file_reference)
-    print('Cytoband file : ' + file_cytoband)
+    print('Gap file : ' + file_gap)
     if not file_construction == "":
         print('Construction file : ' + file_construction)
     else:
         print('No construction file needed')
-    print('Output file : ' + genome + "_" + file_cytoband)
+    print('Output file : ' + genome + "_" + file_gap)
     print('-----------------------------------------\n')
 
 ##############################PROGRAM##############################
@@ -262,8 +263,8 @@ def main(argv):
 
     pd.options.mode.chained_assignment = None  # default='warn'
 
-    # CREATE AN EMPTY CYTOBAND MODIFIED DATAFRAME
-    df_new_cytoband = pd.DataFrame(columns=list(df_cytoband))
+    # CREATE AN EMPTY GAP MODIFIED DATAFRAME
+    df_new_gap = pd.DataFrame(columns=list(df_gap))
 
     # RECOVER LIST OF MODIFIED CHROMOSOMES
     list_chr_construction = df_construction.chr.unique()
@@ -274,88 +275,86 @@ def main(argv):
 
         # MANAGE ADD AND REMOVE CASES
         for key, value in added_dict.iteritems():
-            df_new_cytoband = df_new_cytoband.append(pd.Series([key, 0, len(
-                value), "Nan", "Nan"], index=list(df_new_cytoband.columns.values)), ignore_index=True)
+            df_new_gap = df_new_gap.append(pd.Series([key, 0, len(
+                value), "Other"], index=list(df_new_gap.columns.values)), ignore_index=True)
             #print("ADD : "+str(key))
 
         for i in removed_list:
-            df_cytoband = df_cytoband[df_cytoband.Chromosome != i]
+            df_gap = df_gap[df_gap.Chromosome != i]
             #print("REMOVE : "+str(i))
 
         # FOR EACH CHROMOSOME
-        last_index_df_cyto = len(df_cytoband.index) + 1
+        last_index_df_gap = len(df_gap.index) + 1
 
-        for i in df_cytoband.Chromosome.unique():
+        for i in df_gap.Chromosome.unique():
             # IF IT IS IN FASTA FILE
             if i in list(chrom_dict.keys()) and i in list_chr_construction:
                 # GET THE CONSTRUCTION FOR THIS CHROMOSOME
                 df_construction_by_chr = df_construction.loc[
                     df_construction['chr'] == i]
-                # GET THE CYTOBAND FOR THIS CHROMOSOME
-                df_cytoband_by_chr = df_cytoband.loc[
-                    df_cytoband['Chromosome'] == i]
+                # GET THE GAP FOR THIS CHROMOSOME
+                df_gap_by_chr = df_gap.loc[
+                    df_gap['Chromosome'] == i]
                 # CALL MODIFY FUNCTION FOR THIS CHROMOSOME
                 #print("ANALYZE CHR : "+str(i))
-                # print(df_cytoband_by_chr)
-                modified_chromosome[i], length_df_cytoband = modify_cytoband_by_chr(
-                    df_cytoband_by_chr, df_construction_by_chr, last_index_df_cyto)
+                # print(df_gap_by_chr)
+                modified_chromosome[i], length_df_gap = modify_gap_by_chr(
+                    df_gap_by_chr, df_construction_by_chr, last_index_df_gap)
 
         # print(modified_chromosome)
 
-        # FOR EACH CYTOBAND
-        for index, row in df_cytoband.iterrows():
+        # FOR EACH GAP
+        for index, row in df_gap.iterrows():
             # APPEND IF IT IS NOT MODIFIED
             if row["Chromosome"] not in list_chr_construction and row["Chromosome"] in list(chrom_dict.keys()):
-                df_new_cytoband = df_new_cytoband.append(row)
+                df_new_gap = df_new_gap.append(row)
 
         # FOR EACH MODIFIED CHROMOSOME
         for i in list_chr_construction:
             # APPEND EACH LINE MODIFIED
             for index, row in modified_chromosome[i].iterrows():
-                df_new_cytoband = df_new_cytoband.append(row)
+                df_new_gap = df_new_gap.append(row)
     else:
-        for index, row in df_cytoband.iterrows():
+        for index, row in df_gap.iterrows():
             if row['Chromosome'] in list(chrom_dict.keys()):
-                df_new_cytoband = df_new_cytoband.append(row)
+                df_new_gap = df_new_gap.append(row)
 
     # SORT ALL
-    df_new_cytoband_int = pd.DataFrame(
-        columns=list(df_new_cytoband.columns.values))
-    df_new_cytoband_str = pd.DataFrame(
-        columns=list(df_new_cytoband.columns.values))
-    df_after_sort = pd.DataFrame(columns=list(df_new_cytoband.columns.values))
-    df_new_cytoband['Chromosome'].replace(
+    df_new_gap_int = pd.DataFrame(
+        columns=list(df_new_gap.columns.values))
+    df_new_gap_str = pd.DataFrame(
+        columns=list(df_new_gap.columns.values))
+    df_after_sort = pd.DataFrame(columns=list(df_new_gap.columns.values))
+    df_new_gap['Chromosome'].replace(
         regex=True, inplace=True, to_replace=r'chr', value=r'')
 
-    # CREATE NEW CYTOBAND
-    for index, row in df_new_cytoband.iterrows():
+    # CREATE NEW GAP
+    for index, row in df_new_gap.iterrows():
         try:
             int(row['Chromosome'])
-            df_new_cytoband_int = df_new_cytoband_int.append(
-                pd.Series(row, index=list(df_new_cytoband.columns.values)))
+            df_new_gap_int = df_new_gap_int.append(
+                pd.Series(row, index=list(df_new_gap.columns.values)))
         except:
-            df_new_cytoband_str = df_new_cytoband_str.append(
-                pd.Series(row, index=list(df_new_cytoband.columns.values)))
+            df_new_gap_str = df_new_gap_str.append(
+                pd.Series(row, index=list(df_new_gap.columns.values)))
 
-    df_new_cytoband_int['Chromosome'] = df_new_cytoband_int[
+    df_new_gap_int['Chromosome'] = df_new_gap_int[
         'Chromosome'].astype(int)
-    df_new_cytoband_int = df_new_cytoband_int.sort_values(
+    df_new_gap_int = df_new_gap_int.sort_values(
         by=['Chromosome', 'Start', 'End'], ascending=[1, 1, 1])
-    df_new_cytoband_str = df_new_cytoband_str.sort_values(
+    df_new_gap_str = df_new_gap_str.sort_values(
         by=['Chromosome', 'Start', 'End'], ascending=[1, 1, 1])
-    df_after_sort = pd.concat([df_new_cytoband_int, df_new_cytoband_str])
+    df_after_sort = pd.concat([df_new_gap_int, df_new_gap_str])
     df_after_sort['Chromosome'] = 'chr' + \
         df_after_sort['Chromosome'].astype(str)
-    df_after_sort.to_csv(genome + "_" + file_cytoband, sep='\t',
+    df_after_sort.to_csv(genome + "_" + file_gap, sep='\t',
                          float_format='%.0f', index=False, header=True)
 
 
 ##############################FUNCTIONS##############################
 
-# MODIFY CYTOBAND FOR A GIVEN CHROMOSOME
-def modify_cytoband_by_chr(df_cyto, df_cons, last_index_df_cyto):
-    # print(df_cyto)
-
+# MODIFY GAP FOR A GIVEN CHROMOSOME
+def modify_gap_by_chr(df_gap, df_cons, last_index_df_gap):
     # CHANGE CONSTRUCTION POSITIONS
     add_length = 0
     for index, row in df_cons.iterrows():
@@ -363,92 +362,90 @@ def modify_cytoband_by_chr(df_cyto, df_cons, last_index_df_cyto):
         df_cons.at[index, 'end'] = int(row["end"]) + add_length
         add_length = add_length + int(row["length"])
 
-    # print(df_cons)
     # FOR EACH LINE OF CONSTRUCTION
     for index_cons, row_cons in df_cons.iterrows():
-        # SELECT THE CYTOBAND PART TO MODIFY
-        to_modified_cyto = df_cyto[(df_cyto["End"] > row_cons["start"]) & (
-            df_cyto["Start"] < row_cons["end"])]
+        # SELECT THE GAP PART TO MODIFY
+        to_modified_gap = df_gap[(df_gap["End"] > row_cons["start"]) & (
+            df_gap["Start"] < row_cons["end"])]
+
         # IF INSERTION
         if row_cons["modif_type"] == "insertion":
-            # print("INSERTION")
+            #print("INSERTION")
             # IF ONLY ONE BAND
-            if len(list(to_modified_cyto.index.values)) == 1:
+            if len(list(to_modified_gap.index.values)) == 1:
                 # print("SOLO")
-                End = df_cyto.at[list(to_modified_cyto.index.values)[0], "End"]
-                df_cyto.at[list(to_modified_cyto.index.values)[
+                End = df_gap.at[list(to_modified_gap.index.values)[0], "End"]
+                df_gap.at[list(to_modified_gap.index.values)[
                     0], "End"] = int(row_cons["start"])
                 # I removed the length of the construct because I add it later
-                df_cyto.loc[last_index_df_cyto] = pd.Series([row_cons["chr"], (int(row_cons["start"]) - int(
-                    row_cons["length"])), int(row_cons["end"]), "Nan", "Nan"], index=list(df_cyto.columns.values))
-                last_index_df_cyto += 1
-                df_cyto.loc[last_index_df_cyto] = pd.Series([df_cyto.at[list(to_modified_cyto.index.values)[0], "Chromosome"], int(row_cons["end"]), int(End), df_cyto.at[
-                                                            list(to_modified_cyto.index.values)[0], "Band"], df_cyto.at[list(to_modified_cyto.index.values)[0], "Stain"]], index=list(df_cyto.columns.values))
-                last_index_df_cyto += 1
+                df_gap.loc[last_index_df_gap] = pd.Series([row_cons["chr"], (int(row_cons["start"]) - int(
+                    row_cons["length"])), int(row_cons["end"]), "other"], index=list(df_gap.columns.values))
+                last_index_df_gap += 1
+                df_gap.loc[last_index_df_gap] = pd.Series([df_gap.at[list(to_modified_gap.index.values)[0], "Chromosome"], int(row_cons["end"]), int(End), df_gap.at[
+                                                            list(to_modified_gap.index.values)[0], "Band"], df_gap.at[list(to_modified_gap.index.values)[0], "Stain"]], index=list(df_gap.columns.values))
+                last_index_df_gap += 1
 
             # MORE THAN ONE BAND
-            elif len(list(to_modified_cyto.index.values)) > 1:
+            elif len(list(to_modified_gap.index.values)) > 1:
                 # print("MULTIPLE")
-                End = df_cyto.at[
-                    list(to_modified_cyto.index.values)[-1], "End"]
-                # print(list(to_modified_cyto.index.values))
-                df_cyto.at[list(to_modified_cyto.index.values)[
+                End = df_gap.at[
+                    list(to_modified_gap.index.values)[-1], "End"]
+                # print(list(to_modified_gap.index.values))
+                df_gap.at[list(to_modified_gap.index.values)[
                     0], "End"] = int(row_cons["start"])
-                df_cyto.drop(list(to_modified_cyto.index.values)
+                df_gap.drop(list(to_modified_gap.index.values)
                              [1:-1], inplace=True)
-                df_cyto.loc[last_index_df_cyto] = pd.Series([row_cons["chr"], (int(row_cons["start"]) - int(
-                    row_cons["length"])), int(row_cons["end"]), "Nan", "Nan"], index=list(df_cyto.columns.values))
-                last_index_df_cyto += 1
-                df_cyto.at[list(to_modified_cyto.index.values)[-1],
+                df_gap.loc[last_index_df_gap] = pd.Series([row_cons["chr"], (int(row_cons["start"]) - int(
+                    row_cons["length"])), int(row_cons["end"]), "Nan", "Nan"], index=list(df_gap.columns.values))
+                last_index_df_gap += 1
+                df_gap.at[list(to_modified_gap.index.values)[-1],
                            "Start"] = int(row_cons["end"]) + int(row_cons["length"])
-                df_cyto.at[list(to_modified_cyto.index.values)
+                df_gap.at[list(to_modified_gap.index.values)
                            [-1], "End"] += int(row_cons["length"])
             else:
-                print("Error in cytoband management for insertion")
-                sys.exit()
+                df_gap.loc[last_index_df_gap] = pd.Series([row_cons["chr"], (int(row_cons["start"]) - int(
+                    row_cons["length"])), int(row_cons["end"]), "other"], index=list(df_gap.columns.values))
+                last_index_df_gap += 1
 
         # IF DELETION
         elif row_cons["modif_type"] == "deletion":
             # print("DELETION")
             # IF ONLY ONE BAND
-            if len(list(to_modified_cyto.index.values)) == 1:
+            if len(list(to_modified_gap.index.values)) == 1:
                 # print("SOLO")
-                df_cyto.at[list(to_modified_cyto.index.values)[0], "End"] = int(df_cyto.at[
-                    list(to_modified_cyto.index.values)[0], "End"]) + int(row_cons["length"])
+                df_gap.at[list(to_modified_gap.index.values)[0], "End"] = int(df_gap.at[
+                    list(to_modified_gap.index.values)[0], "End"]) + int(row_cons["length"])
             # IF MORE THAN ONE BAND
-            elif len(list(to_modified_cyto.index.values)) > 1:
+            elif len(list(to_modified_gap.index.values)) > 1:
                 # print("MULTIPLE")
-                df_cyto.at[list(to_modified_cyto.index.values)[
+                df_gap.at[list(to_modified_gap.index.values)[
                     0], "End"] = int(row_cons["start"])
-                df_cyto.drop(list(to_modified_cyto.index.values)
+                df_gap.drop(list(to_modified_gap.index.values)
                              [1:-1], inplace=True)
-                df_cyto.at[list(to_modified_cyto.index.values)
+                df_gap.at[list(to_modified_gap.index.values)
                            [-1], "Start"] = int(row_cons["start"])
-                df_cyto.at[list(to_modified_cyto.index.values)
+                df_gap.at[list(to_modified_gap.index.values)
                            [-1], "End"] += int(row_cons["length"])
             else:
-                print("Error in cytoband management for deletion")
+                print("Error in band management for deletion")
                 sys.exit()
-        else:
-            print("Error in cytoband management not insertion or deletion")
-            sys.exit()
 
-        # THE END OF THE CYTOBAND FILE NEED TO BE MODIFY TOO
-        to_modified_rest = df_cyto[(df_cyto["End"] >= row_cons["start"])]
+        # THE END OF THE BAND FILE NEED TO BE MODIFY TOO
+        to_modified_rest = df_gap[(df_gap["End"] >= row_cons["start"])]
         for i in list(to_modified_rest.index.values):
-            if i not in list(to_modified_cyto.index.values):
-                df_cyto.at[i, "Start"] = int(
-                    df_cyto.at[i, "Start"]) + int(row_cons["length"])
-                df_cyto.at[i, "End"] = int(
-                    df_cyto.at[i, "End"]) + int(row_cons["length"])
+            if i not in list(to_modified_gap.index.values):
+                df_gap.at[i, "Start"] = int(
+                    df_gap.at[i, "Start"]) + int(row_cons["length"])
+                df_gap.at[i, "End"] = int(
+                    df_gap.at[i, "End"]) + int(row_cons["length"])
 
-        # SORT CYTO DATAFRAME
-        df_cyto = df_cyto.sort_values(
+        # SORT gap DATAFRAME
+        df_gap = df_gap.sort_values(
             by=['Chromosome', 'Start', 'End'], ascending=[1, 1, 1])
 
-        # print(df_cyto)
+        # print(df_gap)
 
-    return df_cyto, last_index_df_cyto
+    return df_gap, last_index_df_gap
 
 
 if __name__ == '__main__':

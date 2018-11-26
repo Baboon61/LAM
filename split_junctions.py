@@ -813,6 +813,14 @@ def main(argv):
                                                     if int(current_junction["Strand"]) == -1:
                                                         current_junction[
                                                             "Junction"] = current_junction["Rend"]
+
+                                                # CHANGE STRAND IF LOCUS GET REVERSE
+                                                if row_dup_locus[3] != row_dup_locus[7]:
+                                                	if int(current_junction["Strand"]) == 1:
+                                                		current_junction["Strand"] = -1
+                                                	else:
+                                                		current_junction["Strand"] = 1
+
                                         # print(current_junction)
 
                                     # FIND THE BEST LOCUS
@@ -822,6 +830,15 @@ def main(argv):
                                     else:
                                         max_type, max_position, best_locus = "null"
                                     #print(str(max_type), str(max_position), best_locus)
+
+                            # ADD A STRAND INFORMATION
+                            #check_strand=False
+                            #for index_locus, row_locus in df_legitimate_locus.iterrows():
+                            #    if current_junction["B_Rname"] == row_locus[0] and current_junction["Rname"] == row_locus[1] and int(current_junction["Junction"]) >= int(row_locus[2]) and int(current_junction["Junction"]) <= int(row_locus[3]):
+                            #        current_junction["Locus Strand"] = row_locus[5]
+                            #        check_strand=True
+                            #if not check_strand:
+                            #	current_junction["Locus Strand"] = "+"
 
                         # if not check_legitimate:
                         #	print("-------------------------------ILLEGITIME")
@@ -855,6 +872,8 @@ def main(argv):
                                     np.array(current_junction, dtype=pd.Series)[18])
                                 table.append(
                                     int(len(np.array(current_junction, dtype=pd.Series)[18])))
+                                #table.append(
+                                #    np.array(current_junction, dtype=pd.Series)[32])
 
                                 spamwriter.writerow(table)
                         finally:

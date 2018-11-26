@@ -653,9 +653,9 @@ value_color <- c(0.1,0.25,0.5,0.75,1,2.5,5,7.5,10,25,50,75,100)
 names(value_color) <- c("#e5e5ff", "#ccccff", "#b2b2ff", "#9999ff", "#7f7fff", "#6666ff", "#4c4cff", "#3232ff", "#1919ff", "#0000ff", "#0000cc", "#000099", "#000066")
 custom.frequency <- NULL
 
-#for(library in 1:nrow(metadata[,1,drop=FALSE])){
+for(library in 1:nrow(metadata[,1,drop=FALSE])){
 # TESTING ONE LIBRARY
-for(library in 1:1){
+#for(library in 1:1){
 	# CHECK POSTPROCESS DIRECTORY EXISTS
 	if (!file.exists(paste0(opt$dir_post,as.vector(metadata$Library[library])))){
 		write(paste(c("Warning : ",opt$dir_post," does not contains {",as.vector(metadata$Library[library]),"}"), collapse=''),stderr())

@@ -1542,6 +1542,9 @@ for(library in 1:1){
 					max_y <- max(max(custom.frequency.plus$Data), max(custom.frequency.minus$Data))
 				}
 
+				# ADAPT THE SCALE TO SOMETHING RELEVANT, NOT 8.23, BETTER 10
+				max_y <- 10^nchar(trunc(max_y))
+
 				if (length(custom.frequency.minus) > 0){
 					#kpPlotCoverage(kp_histo, data=custom.frequency.minus, r0=0.50, r1=0.05, col="#eb0c0c",ymax=15000, clipping=FALSE, show.0.cov=FALSE)
 					kpPlotCoverage(kp_histo, data=custom.frequency.minus, r0=0.50, r1=0.05, ymax=max_y*1000, col="#eb0c0c", clipping=FALSE, show.0.cov=FALSE)
@@ -1566,7 +1569,7 @@ for(library in 1:1){
 				}
 
 				if (!is.null(max_y)){
-					kpAxis(kp_histo, labels = c(round(max_y, 2), round(max_y/2+max_y/4, 2), round(max_y/2, 2), round(max_y/4, 2), 0, round(max_y/4, 2), round(max_y/2, 2), round(max_y/4+max_y/2, 2), round(max_y, 2)), numticks=9, r0=0.05, r1=0.955, cex=0.5)
+					kpAxis(kp_histo, labels = c(paste0(round(max_y, 2),"%"), paste0(round(max_y/2+max_y/4, 2),"%"), paste0(round(max_y/2, 2),"%"), paste0(round(max_y/4, 2),"%"), paste0(0,"%"), paste0(round(max_y/4, 2),"%"), paste0(round(max_y/2, 2),"%"), paste0(round(max_y/4+max_y/2, 2),"%"), paste0(round(max_y, 2),"%")), numticks=9, r0=0.05, r1=0.955, cex=0.5)
 				}
 				# CLOSE THE GRAPHIC DEVICE AND CLEAR MEMORY
 				dev.off()

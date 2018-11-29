@@ -161,6 +161,22 @@ Modify_genes_position <- function(df_construction, chrom, start, end){
 	return(c(as.integer(start)-as.integer(aux_start), as.integer(end)-as.integer(aux_end)))
 }
 
+# Function to add a scalebar to a base-graphics plot
+myScalebar = function(units_label, yadj=1.5) {
+
+  # Get plot coordinates
+  pc = par("usr") 
+
+  # Position scale line between last two major x-axis tick marks
+  # and 1/10th of the total y-range above the lower y-axis coordinate
+  lines(c(floor(pc[2]-1),floor(pc[2])),     
+        rep(pc[3] + 0.1*(pc[4] - pc[3]), 2))
+
+  # Place the units label at the midpoint of and just below the scale line
+  text(x=mean(c(floor(pc[2]-1), floor(pc[2]))), 
+       y=pc[3] + 0.1*(pc[4] - pc[3]),
+       label=units_label, adj=c(0.5, yadj))
+}
 
 ##############################CHECK UP/SET UP##############################
 
@@ -218,6 +234,7 @@ if (!(file.exists(opt$file_reference))){
 } else{
 	chrom_fasta_list <- c('all')
 	chrom_fasta_length <- c()
+
 	chrom_fasta = readDNAStringSet(opt$file_reference)
 	for (i in 1:length(chrom_fasta)){
 		chrom_fasta_list[i+1] <- strsplit(names(chrom_fasta), " ")[[i]][1]
@@ -653,9 +670,9 @@ value_color <- c(0.1,0.25,0.5,0.75,1,2.5,5,7.5,10,25,50,75,100)
 names(value_color) <- c("#e5e5ff", "#ccccff", "#b2b2ff", "#9999ff", "#7f7fff", "#6666ff", "#4c4cff", "#3232ff", "#1919ff", "#0000ff", "#0000cc", "#000099", "#000066")
 custom.frequency <- NULL
 
-for(library in 1:nrow(metadata[,1,drop=FALSE])){
+#for(library in 1:nrow(metadata[,1,drop=FALSE])){
 # TESTING ONE LIBRARY
-#for(library in 1:1){
+for(library in 1:1){
 	# CHECK POSTPROCESS DIRECTORY EXISTS
 	if (!file.exists(paste0(opt$dir_post,as.vector(metadata$Library[library])))){
 		write(paste(c("Warning : ",opt$dir_post," does not contains {",as.vector(metadata$Library[library]),"}"), collapse=''),stderr())
@@ -1502,28 +1519,54 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 				# CREATE PDF NAME
 				pdf(file=paste(c(opt$dir_post,as.vector(metadata$Library[library]),"/",as.vector(metadata$Library[library]), file_output_extension_histo), collapse=''), height=8, width=8);
 
-				seqlevels(custom.genome) <- c(as.character(seqnames(custom.genome)))
+				custom.genome.histo <- custom.genome[seqnames(custom.genome) %in% seqnames(custom.frequency)]
 
-				kp_histo <- plotKaryotype(genome = custom.genome, cytobands = custom.cytobands, main = expression("Karyoplot of double stranded break areas"), cex=0.6, ideogram.plotter=NULL)
+				seqlevels(custom.genome.histo) <- c(as.character(seqnames(custom.genome.histo)))
+
+				kp_histo <- plotKaryotype(genome = custom.genome.histo, cytobands = custom.cytobands, main = expression("Karyoplot of double stranded break areas"), cex=0.6, ideogram.plotter=NULL)
+
+				if (length(custom.frequency.plus) == 0){
+					if (length(custom.frequency.minus) == 0){
+						max_y <- NULL
+					} else {
+						max_y <- max(max(custom.frequency.minus$Data))
+					}
+
+				} else if (length(custom.frequency.minus) == 0){
+					if (length(custom.frequency.plus) == 0){
+						max_y <- NULL
+					} else {
+						max_y <- max(max(custom.frequency.plus$Data))
+					}
+				} else{
+					max_y <- max(max(custom.frequency.plus$Data), max(custom.frequency.minus$Data))
+				}
 
 				if (length(custom.frequency.minus) > 0){
-					kpPlotCoverage(kp_histo, data=custom.frequency.minus, r0=0.50, r1=0.05, col="#eb0c0c",ymax=15000, clipping=FALSE, show.0.cov=FALSE)
+					#kpPlotCoverage(kp_histo, data=custom.frequency.minus, r0=0.50, r1=0.05, col="#eb0c0c",ymax=15000, clipping=FALSE, show.0.cov=FALSE)
+					kpPlotCoverage(kp_histo, data=custom.frequency.minus, r0=0.50, r1=0.05, ymax=max_y*1000, col="#eb0c0c", clipping=FALSE, show.0.cov=FALSE)
+
 				}
 				if (length(custom.frequency.plus) > 0){
-					kpPlotCoverage(kp_histo, data=custom.frequency.plus, r0=0.505, r1=0.955, col="#20eb0d",ymax=15000, clipping=FALSE, show.0.cov=FALSE)
+					#kpPlotCoverage(kp_histo, data=custom.frequency.plus, r0=0.505, r1=0.955, col="#20eb0d",ymax=15000, clipping=FALSE, show.0.cov=FALSE)
+					kpPlotCoverage(kp_histo, data=custom.frequency.plus, r0=0.505, r1=0.955, ymax=max_y*1000, col="#20eb0d", clipping=FALSE, show.0.cov=FALSE)
 				}
 
 				# ADD TICK MARKERS IF NOT ZOOM IN AND SOLO CUSTOM GENOME
-				if (!(opt$visualization == "zoom_in" & length(custom.genome) > 1)){
-					metric <- 10^(strtoi(nchar(toString(max(width(custom.genome)))))-2)
+				if (!(opt$visualization == "zoom_in" & length(custom.genome.histo) > 1)){
+					metric <- 10^(strtoi(nchar(toString(max(width(custom.genome.histo)))))-2)
 					kpAddBaseNumbers(kp_histo, tick.dist = metric, tick.len = 15, tick.col="red", cex=0.4, minor.tick.dist = metric/10, minor.tick.len = 5, minor.tick.col = "gray")
 				}
 				if (!is.null(opt$file_locus)) {
-					kpPlotRegions(kp_histo, toGRanges(df_locus), col="#7c7c7c", border="#000000", r0=0, r1=0.05)
+					kpPlotRegions(kp_histo, toGRanges(df_locus), col="#7c7c7c", border="#000000", r0=0, r1=-0.05)
 				}
 				# PRINT LOCI
 				if (!is.null(opt$file_locus)) {
-					kpPlotMarkers(kp_histo, data=toGRanges(df_locus), text.orientation = "horizontal", label.color="black", labels=names_markers, r0=0, r1=-0.05, marker.parts=c(0,00,0), cex=0.4, adjust.label.position = FALSE)
+					kpPlotMarkers(kp_histo, data=toGRanges(df_locus), text.orientation = "horizontal", label.color="black", labels=names_markers, r0=0, r1=-0.15, marker.parts=c(0,00,0), cex=0.4, adjust.label.position = FALSE)
+				}
+
+				if (!is.null(max_y)){
+					kpAxis(kp_histo, labels = c(round(max_y, 2), round(max_y/2+max_y/4, 2), round(max_y/2, 2), round(max_y/4, 2), 0, round(max_y/4, 2), round(max_y/2, 2), round(max_y/4+max_y/2, 2), round(max_y, 2)), numticks=9, r0=0.05, r1=0.955, cex=0.5)
 				}
 				# CLOSE THE GRAPHIC DEVICE AND CLEAR MEMORY
 				dev.off()

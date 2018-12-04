@@ -37,7 +37,9 @@ spec = matrix(c(
 'file_locus', 'l', 2, "character", "file to set up some locus labels",
 'greek', 'k', 0, "logical", "(only if -l option), transform locus name to greek name (alpha, Alpha, beta...)",
 'unlink' , 'u', 0, "logical", "unlink the bait1/prey1, bait2/prey2 process and allows to search for bait1/prey2 junctions",
-'file_rename', 'x', 2, "character", "file to rename chromosome to a better display"
+'file_rename', 'x', 2, "character", "file to rename chromosome to a better display",
+'multi', 'w', 2, "character", "library to display in the multi visualization, separated by comma (in the input order) (Default : 'all') (zoom_in mode only)",
+'max_y', 'q', 2, "integer", "Y axis maximum for multi visualization only (Default : 100) (zoom_in mode only)"
 ), byrow=TRUE, ncol=5)
 
 opt = getopt(spec)
@@ -80,8 +82,8 @@ LinksAndRegions <- function(kp, df, value, arch_circ, r0_Links, r1_Links, r0_Reg
             starts <- toGRanges(data.frame(sub_data$B_Rname,sub_data$B_Rstart,sub_data$B_Rend))
             ends <- toGRanges(data.frame(sub_data$Rname,sub_data$Rstart,sub_data$Rend))
             suppressWarnings(total_bin <- append(total_bin, ends))
-            kpPlotRegions(kp, ends, r0=r0_Regions, r1=r1_Regions, col="#ff8d92", avoid.overlapping=FALSE)
-            kpPlotRegions(kp, starts, r0=r0_Regions, r1=r1_Regions, col="#57d53b", avoid.overlapping=FALSE)
+            kpPlotRegions(kp, ends, r0=r0_Regions, r1=r1_Regions, col="#ff8d92", avoid.overlapping=FALSE, clipping = TRUE)
+            kpPlotRegions(kp, starts, r0=r0_Regions, r1=r1_Regions, col="#57d53b", avoid.overlapping=FALSE, clipping = TRUE)
         }
     }
     return(total_bin)
@@ -197,7 +199,8 @@ if ( is.null(opt$file_locus ) ) { write("Warning : You will not add personal loc
 if ( is.null(opt$greek ) ) { write("Warning : Do not change loci name with greek letters !",stderr()); opt$greek=FALSE }
 if ( is.null(opt$unlink ) ) { write("Warning : Bait and prey are linked !",stderr()); unlink=FALSE }
 if ( is.null(opt$file_rename ) ) { write("Warning : You will not rename some chromosome names !",stderr()); opt$file_rename = NULL }
-
+if ( is.null(opt$multi ) ) { opt$multi = 'all' }
+if ( is.null(opt$max_y ) ) { opt$max_y = 100 }
 
 # CHECK METADATA FILE
 if (file.exists(opt$file_metadata)){
@@ -574,6 +577,51 @@ if (!is.null(opt$file_rename)){
 	}
 }
 
+# CHECK MULTI VISUALIZATION
+if (opt$visualization == "zoom_in"){
+	if (!is.null(opt$multi)){
+		array_multi <- c()
+		if (opt$multi == 'all'){
+			library_multi <- as.vector(metadata[,1])
+		} else{
+			library_multi <- strsplit(opt$multi, ",")[[1]]
+		}
+		for (i in 1:length(library_multi)){
+			if (library_multi[i] %in% metadata[,1]){
+				array_multi <- append(array_multi, library_multi[i])
+				ordered_metadata <- metadata[match(library_multi, metadata[,1]),]
+				ordered_metadata <- ordered_metadata[complete.cases(ordered_metadata), ]
+			} else {
+				write(paste0("Warning : {",library_multi[i],"} not found in the metadata libraries for ",opt$genome," genome"),stderr())
+				write(paste0("Warning : {",library_multi[i],"} will not be used"),stderr())
+			}
+		}
+		array_multi <- rev(array_multi)
+		for (i in 1:length(metadata[,1])){
+			if (!(metadata[i,1] %in% ordered_metadata$Library)){
+				ordered_metadata <- rbind(ordered_metadata, metadata[i,])
+			}
+		}
+
+		metadata <- ordered_metadata
+		first_multi <- TRUE
+		start_coverage_multi = -0.15
+		size_full_coverage_multi = 1.15
+
+		# SIZE BETWEEN EACH LIBRARY IN MULTI VISUALIZATION
+		between_size = 0.05
+		# SIZE FOR EACH LIBRARY IN MULTI VISUALIZATION
+		nb_multi = length(array_multi)
+		if (nb_multi > 1){
+			total_size_for_coverage = size_full_coverage_multi - (between_size * (nb_multi-1))
+		} else{
+			total_size_for_coverage = size_full_coverage_multi
+		}
+		size_by_library_for_coverage = total_size_for_coverage/nb_multi
+		size_by_library_for_one_side_coverage = size_by_library_for_coverage/2
+	}
+}
+
 # CHECK INPUT MARK HISTORY
 if (opt$input_mark == ""){
 	write("Warning : You will process the raw file !",stderr())
@@ -613,9 +661,11 @@ if (check_input_mark == "False"){
 if (is.null(file_input_extension )){
 	file_output_extension_link <- paste(c("_Link_",opt$output_mark,".pdf"), collapse='')
 	file_output_extension_histo <- paste(c("_Histo_",opt$output_mark,".pdf"), collapse='')
+	file_output_extension_multi <- paste(c("_Multi_",opt$output_mark,".pdf"), collapse='')
 } else{
 	file_output_extension_link <- paste(c(substr(file_input_extension, 1, nchar(file_input_extension)-4),"_Link_",opt$output_mark,".pdf"), collapse='')
 	file_output_extension_histo <- paste(c(substr(file_input_extension, 1, nchar(file_input_extension)-4),"_Histo_",opt$output_mark,".pdf"), collapse='')
+	file_output_extension_multi <- paste(c(substr(file_input_extension, 1, nchar(file_input_extension)-4),"_Multi_",opt$output_mark,".pdf"), collapse='')
 }
 
 ##############################PRINTS##############################
@@ -660,7 +710,14 @@ if (!is.null(opt$file_rename)) {
 }
 write(paste0('Input file extension: ',file_input_extension),stderr())
 write(paste0('Output file extension for link : ',file_output_extension_link),stderr())
-write(paste0('Output file extension for histo : ',file_output_extension_histo),stderr())
+if (opt$visualization == "zoom_in"){
+	write(paste0('Output file extension for histo : ',file_output_extension_histo),stderr())
+}
+if (opt$visualization == "zoom_in"){
+	if (!is.null(opt$multi)){
+		write(paste0('Output file extension for multi : ',file_output_extension_histo),stderr())
+	}
+}
 write('-----------------------------------------\n',stderr())
 
 ##############################PROGRAM##############################
@@ -670,9 +727,9 @@ value_color <- c(0.1,0.25,0.5,0.75,1,2.5,5,7.5,10,25,50,75,100)
 names(value_color) <- c("#e5e5ff", "#ccccff", "#b2b2ff", "#9999ff", "#7f7fff", "#6666ff", "#4c4cff", "#3232ff", "#1919ff", "#0000ff", "#0000cc", "#000099", "#000066")
 custom.frequency <- NULL
 
-#for(library in 1:nrow(metadata[,1,drop=FALSE])){
+for(library in 1:nrow(metadata[,1,drop=FALSE])){
 # TESTING ONE LIBRARY
-for(library in 1:1){
+#for(library in 1:2){
 	# CHECK POSTPROCESS DIRECTORY EXISTS
 	if (!file.exists(paste0(opt$dir_post,as.vector(metadata$Library[library])))){
 		write(paste(c("Warning : ",opt$dir_post," does not contains {",as.vector(metadata$Library[library]),"}"), collapse=''),stderr())
@@ -840,7 +897,7 @@ for(library in 1:1){
 
 			# FULL GENOME DISPLAY
 			if (opt$visualization == "full_genome"){
-				custom.genome <- toGRanges(chromosomesLength)
+				custom.genome <- toGRanges(chromosomesLength, Bait=rep.int("yes", nrow(chromosomesLength)), Prey=rep.int("yes", nrow(chromosomesLength)))
 				custom.cytobands <- toGRanges(cytoband)
 			# SELECTED CHROMOSOME DISPLAY
 			} else if (opt$visualization == "selected_chromosomes"){
@@ -873,6 +930,16 @@ for(library in 1:1){
 					}
 				}
 				tmp_custom_genome <- tmp_custom_genome[order(as.numeric(row.names(tmp_custom_genome))),]
+				tmp_custom_genome[ ,"Bait"] <- rep.int("no", nrow(tmp_custom_genome))
+				tmp_custom_genome[ ,"Prey"] <- rep.int("no", nrow(tmp_custom_genome))
+				for (i in 1:nrow(tmp_custom_genome[,1,drop=FALSE])){
+					if (tmp_custom_genome[i,1] %in% matrix_Bait[ ,1]){
+						tmp_custom_genome[i,"Bait"] <- "yes"
+					}
+					if (tmp_custom_genome[i,1] %in% matrix_Prey[ ,1]){
+						tmp_custom_genome[i,"Prey"] <- "yes"
+					}
+				}
 				custom.genome <- toGRanges(tmp_custom_genome)
 				custom.cytobands <- toGRanges(cytoband)
 			}
@@ -930,6 +997,21 @@ for(library in 1:1){
 						}
 					}
 				}
+				tmp_custom_genome <- cbind(tmp_custom_genome, rep.int("no", nrow(tmp_custom_genome)))
+				tmp_custom_genome <- cbind(tmp_custom_genome, rep.int("no", nrow(tmp_custom_genome)))
+				for (i in 1:nrow(tmp_custom_genome[,1,drop=FALSE])){
+					for (j in 1:nrow(matrix_Bait[,1,drop=FALSE])){
+						if (paste0(tmp_custom_genome[i,1],tmp_custom_genome[i,2],tmp_custom_genome[i,3]) == paste0(matrix_Bait[j,1],matrix_Bait[j,2], matrix_Bait[j,3])){
+							tmp_custom_genome[i,4] <- "yes"
+						}
+					}
+					for (j in 1:nrow(matrix_Prey[,1,drop=FALSE])){
+						if (paste0(tmp_custom_genome[i,1],tmp_custom_genome[i,2],tmp_custom_genome[i,3]) == paste0(matrix_Prey[j,1],matrix_Prey[j,2], matrix_Prey[j,3])){
+							tmp_custom_genome[i,5] <- "yes"
+						}
+					}
+				}
+
 				if (!(is.data.frame(tmp_custom_genome) && nrow(tmp_custom_genome)==0)){
 					for (i in 1:nrow(tmp_custom_genome)){
 						if ((tmp_custom_genome[i,2] == "") & (tmp_custom_genome[i,3] == "")){
@@ -944,7 +1026,7 @@ for(library in 1:1){
 						}
 					}
 				}
-				custom.genome <- toGRanges(data.frame(tmp_custom_genome[,1], as.integer(unlist(tmp_custom_genome[,2])), as.integer(unlist(tmp_custom_genome[,3]))))
+				custom.genome <- toGRanges(data.frame(tmp_custom_genome[,1], as.integer(unlist(tmp_custom_genome[,2])), as.integer(unlist(tmp_custom_genome[,3])), bait=tmp_custom_genome[,4], prey=tmp_custom_genome[,5]))
 				custom.cytobands <- toGRanges(cytoband)
 				if (opt$visualization == "zoom_in"){ 
 					if (file.exists(paste(c(opt$dir_post,as.vector(metadata$Library[library]),"/",as.vector(metadata$Library[library]),"_Karyoplot_freq",file_input_extension), collapse=''))){
@@ -1096,7 +1178,7 @@ for(library in 1:1){
 							}
 							# WARN IF THE RENAME LINE IS NOT USE
 							else{
-								write(paste(c("Warning : The chromosome ", tmp_df_rename_chrpart$current[i], " in the rename file does not exist in your reference genome !"), collapse=""),stderr())
+								write(paste(c("Warning : The chromosome ", tmp_df_rename_chrpart$current[i], " in the rename file does not exist in your bait/prey options !"), collapse=""),stderr())
 								write(paste(c("Warning : {", tmp_df_rename_chrpart$current[i], "} will not be use for the rename !"), collapse=""),stderr())
 							}
 						}
@@ -1375,6 +1457,10 @@ for(library in 1:1){
 						names_markers <- df_locus$name
 					}
 				}
+				array_strand <- df_locus$strand
+				df_locus$strand <- NULL
+				GRanges_locus <- toGRanges(df_locus)
+				strand(GRanges_locus) <- array_strand
 			}
 
 			pp <- getDefaultPlotParams(plot.type=1)
@@ -1390,7 +1476,7 @@ for(library in 1:1){
 			
 			# CREATE PDF NAME
 			pdf(file=paste(c(opt$dir_post,as.vector(metadata$Library[library]),"/",as.vector(metadata$Library[library]), file_output_extension_link), collapse=''), height=8, width=8);
-			
+
 			#kp_link <- plotKaryotype(genome = custom.genome, cytobands = custom.cytobands, main = expression("Karyoplot of double stranded break areas"), cex=0.6, plot.params=pp)
 			kp_link <- plotKaryotype(genome = custom.genome, cytobands = custom.cytobands, main = expression("Karyoplot of double stranded break areas"), cex=0.6, ideogram.plotter=NULL)
 
@@ -1400,13 +1486,32 @@ for(library in 1:1){
 				kpAddBaseNumbers(kp_link, tick.dist = metric, tick.len = 15, tick.col="red", cex=0.4, minor.tick.dist = metric/10, minor.tick.len = 5, minor.tick.col = "gray")
 			}
 			if (!is.null(opt$file_locus)) {
-				kpPlotRegions(kp_link, toGRanges(df_locus), col="#7c7c7c", border="#000000", r0=0, r1=0.05)
+				if (!is.null(GRanges_locus) & opt$visualization == "zoom_in"){
+					new_GRanges_df <- NULL
+					
+					sub_GRanges_locus <- subsetByOverlaps(GRanges_locus,custom.genome)
+
+					for (i in 1:length(custom.genome)){
+						tmp_df_locus <- sub_GRanges_locus[seqnames(sub_GRanges_locus) == as.character(seqnames(custom.genome[i]))]
+						if (strtoi(start(tmp_df_locus[1])) < strtoi(start(custom.genome[i]))){
+							start(tmp_df_locus[1]) <- strtoi(start(custom.genome[i]))
+						}
+						if (strtoi(end(tmp_df_locus[length(tmp_df_locus)])) > strtoi(end(custom.genome[i]))){
+							end(tmp_df_locus[length(tmp_df_locus)]) <- strtoi(end(custom.genome[i]))
+						}
+						new_GRanges_df <- append(new_GRanges_df, tmp_df_locus)
+					}
+					kpPlotRegions(kp_link, new_GRanges_df, col="#7c7c7c", border="#000000", r0=-0.2, r1=-0.25, clipping = TRUE)
+				} else{
+					kpPlotRegions(kp_link, GRanges_locus, col="#7c7c7c", border="#000000", r0=-0.2, r1=-0.25, clipping = TRUE)
+				}
 			}
 			#print("DATA")
 			#print(karyo_data)
 
 			# ADD LINKS AND REGIONS
-			total_bin <- LinksAndRegions(kp_link, karyo_data, value_color, 6, 0.11, 0.26, 0.06, 0.11)
+			#total_bin <- LinksAndRegions(kp_link, karyo_data, value_color, 6, 0.11, 0.26, 0.06, 0.11)
+			total_bin <- LinksAndRegions(kp_link, karyo_data, value_color, 6, -0.10, 0.05, -0.15, -0.10)
 			# UCSC GENES
 			if (opt$UCSC) {
 				# SET UP DATAFRAME
@@ -1499,18 +1604,20 @@ for(library in 1:1){
 							}
 						}
 						# PRINT GENES
-						suppressWarnings(kpPlotMarkers(kp_link, data=genes, text.orientation = "vertical", label.color="black", labels=genes$external_gene_name, r0=0, r1=-0.05, cex=0.3, adjust.label.position = TRUE))
+						suppressWarnings(kpPlotMarkers(kp_link, data=genes, text.orientation = "vertical", label.color="black", labels=genes$external_gene_name, r0=0, r1=-0.4, cex=0.3, adjust.label.position = TRUE))
 					}
 				}
 			}
 			# PRINT LOCI
 			if (!is.null(opt$file_locus)) {
 				#kpPlotMarkers(kp_link, data=toGRanges(df_locus), text.orientation = "horizontal", label.color="black", labels=names_markers, label.margin=0, r0=0.15, r1=0.1, cex=0.4, marker.parts=c(0,0,0), adjust.label.position = TRUE)
-				kpPlotMarkers(kp_link, data=toGRanges(df_locus), text.orientation = "horizontal", label.color="black", labels=names_markers, r0=0, r1=-0.05, marker.parts=c(0,00,0), cex=0.4, adjust.label.position = FALSE)
+				kpPlotMarkers(kp_link, data=GRanges_locus, text.orientation = "horizontal", label.color="black", labels=names_markers, r0=0, r1=-0.4, marker.parts=c(0,00,0), cex=0.4, adjust.label.position = FALSE)
 			}
 
 			# CLOSE THE GRAPHIC DEVICE AND CLEAR MEMORY
 			dev.off()
+
+			# FREQUENCY PLOT
 
 			if (!is.null(custom.frequency)){
 			
@@ -1520,10 +1627,11 @@ for(library in 1:1){
 				pdf(file=paste(c(opt$dir_post,as.vector(metadata$Library[library]),"/",as.vector(metadata$Library[library]), file_output_extension_histo), collapse=''), height=8, width=8);
 
 				custom.genome.histo <- custom.genome[seqnames(custom.genome) %in% seqnames(custom.frequency)]
+				custom.genome.histo <- custom.genome.histo[custom.genome.histo$prey == "yes"]
 
 				seqlevels(custom.genome.histo) <- c(as.character(seqnames(custom.genome.histo)))
 
-				kp_histo <- plotKaryotype(genome = custom.genome.histo, cytobands = custom.cytobands, main = expression("Karyoplot of double stranded break areas"), cex=0.6, ideogram.plotter=NULL)
+				kp_histo <- plotKaryotype(plot.type = 1, genome = custom.genome.histo, cytobands = custom.cytobands, main = expression("Karyoplot of double stranded break frequency areas"), cex=0.6, ideogram.plotter=NULL)
 
 				if (length(custom.frequency.plus) == 0){
 					if (length(custom.frequency.minus) == 0){
@@ -1547,12 +1655,15 @@ for(library in 1:1){
 
 				if (length(custom.frequency.minus) > 0){
 					#kpPlotCoverage(kp_histo, data=custom.frequency.minus, r0=0.50, r1=0.05, col="#eb0c0c",ymax=15000, clipping=FALSE, show.0.cov=FALSE)
-					kpPlotCoverage(kp_histo, data=custom.frequency.minus, r0=0.50, r1=0.05, ymax=max_y*1000, col="#eb0c0c", clipping=FALSE, show.0.cov=FALSE)
+					kpPlotCoverage(kp_histo, data=custom.frequency.minus, r0=0.3499, r1=-0.15, ymax=max_y*1000, col="#eb0c0c", clipping=FALSE, show.0.cov=FALSE)
+					#kpPlotCoverage(kp_histo, data.panel = 2, data=custom.frequency.minus, r0=-0.10, r1=0.60, ymax=max_y*1000, col="#eb0c0c", clipping=FALSE, show.0.cov=FALSE)
+
 
 				}
 				if (length(custom.frequency.plus) > 0){
 					#kpPlotCoverage(kp_histo, data=custom.frequency.plus, r0=0.505, r1=0.955, col="#20eb0d",ymax=15000, clipping=FALSE, show.0.cov=FALSE)
-					kpPlotCoverage(kp_histo, data=custom.frequency.plus, r0=0.505, r1=0.955, ymax=max_y*1000, col="#20eb0d", clipping=FALSE, show.0.cov=FALSE)
+					kpPlotCoverage(kp_histo, data=custom.frequency.plus, r0=0.3501, r1=0.85, ymax=max_y*1000, col="#20eb0d", clipping=FALSE, show.0.cov=FALSE)
+					#kpPlotCoverage(kp_histo, data.panel = 1, data=custom.frequency.plus, r0=-0.10, r1=0.60, ymax=max_y*1000, col="#20eb0d", clipping=FALSE, show.0.cov=FALSE)
 				}
 
 				# ADD TICK MARKERS IF NOT ZOOM IN AND SOLO CUSTOM GENOME
@@ -1561,19 +1672,67 @@ for(library in 1:1){
 					kpAddBaseNumbers(kp_histo, tick.dist = metric, tick.len = 15, tick.col="red", cex=0.4, minor.tick.dist = metric/10, minor.tick.len = 5, minor.tick.col = "gray")
 				}
 				if (!is.null(opt$file_locus)) {
-					kpPlotRegions(kp_histo, toGRanges(df_locus), col="#7c7c7c", border="#000000", r0=0, r1=-0.05)
+					#kpPlotRegions(kp_histo, toGRanges(df_locus), col="#7c7c7c", border="#000000", r0=0, r1=-0.05)
+					kpPlotRegions(kp_histo, GRanges_locus, col="#7c7c7c", border="#000000", r0=-0.2, r1=-0.25, clipping = TRUE)
 				}
 				# PRINT LOCI
 				if (!is.null(opt$file_locus)) {
-					kpPlotMarkers(kp_histo, data=toGRanges(df_locus), text.orientation = "horizontal", label.color="black", labels=names_markers, r0=0, r1=-0.15, marker.parts=c(0,00,0), cex=0.4, adjust.label.position = FALSE)
+					kpPlotMarkers(kp_histo, data=GRanges_locus, text.orientation = "horizontal", label.color="black", labels=names_markers, r0=0, r1=-0.4, marker.parts=c(0,00,0), cex=0.4, adjust.label.position = FALSE)
 				}
 
 				if (!is.null(max_y)){
-					kpAxis(kp_histo, labels = c(paste0(round(max_y, 2),"%"), paste0(round(max_y/2+max_y/4, 2),"%"), paste0(round(max_y/2, 2),"%"), paste0(round(max_y/4, 2),"%"), paste0(0,"%"), paste0(round(max_y/4, 2),"%"), paste0(round(max_y/2, 2),"%"), paste0(round(max_y/4+max_y/2, 2),"%"), paste0(round(max_y, 2),"%")), numticks=9, r0=0.05, r1=0.955, cex=0.5)
+					kpAxis(kp_histo, labels = c(paste0(round(max_y, 2),"%"), paste0(round(max_y/2+max_y/4, 2),"%"), paste0(round(max_y/2, 2),"%"), paste0(round(max_y/4, 2),"%"), paste0(0,"%"), paste0(round(max_y/4, 2),"%"), paste0(round(max_y/2, 2),"%"), paste0(round(max_y/4+max_y/2, 2),"%"), paste0(round(max_y, 2),"%")), numticks=9, r0=-0.15, r1=0.85, cex=0.5, side=1)
+				#	kpAxis(kp_histo, data.panel = 1, labels = c(paste0(0,"%"), paste0(round(max_y/4, 2),"%"), paste0(round(max_y/2, 2),"%"), paste0(round(max_y/4+max_y/2, 2),"%"), paste0(round(max_y, 2),"%")), numticks=5, r0=-0.1, r1=0.60, cex=0.5)
+				#	kpAxis(kp_histo, data.panel = 2, labels = c(paste0(0,"%"), paste0(round(max_y/4, 2),"%"), paste0(round(max_y/2, 2),"%"), paste0(round(max_y/4+max_y/2, 2),"%"), paste0(round(max_y, 2),"%")), numticks=5, r0=-0.1, r1=0.60, cex=0.5)
 				}
 				# CLOSE THE GRAPHIC DEVICE AND CLEAR MEMORY
 				dev.off()
+
+				# MULTI VISUALIZATION
+				if (opt$visualization == "zoom_in"){
+					if (!is.null(opt$multi)){
+						if (first_multi){
+							pdf(file=paste(c(opt$dir_post,"Multi_",file_output_extension_multi), collapse=''), height=8, width=8);
+							kp_multi <- plotKaryotype(plot.type = 1, genome = custom.genome.histo, cytobands = custom.cytobands, main = expression("Karyoplot of double stranded break frequency areas"), cex=0.6, ideogram.plotter=NULL)
+							
+							# ADD TICK MARKERS IF NOT ZOOM IN AND SOLO CUSTOM GENOME
+							if (!(opt$visualization == "zoom_in" & length(custom.genome.histo) > 1)){
+								metric <- 10^(strtoi(nchar(toString(max(width(custom.genome.histo)))))-2)
+								kpAddBaseNumbers(kp_multi, tick.dist = metric, tick.len = 15, tick.col="red", cex=0.4, minor.tick.dist = metric/10, minor.tick.len = 5, minor.tick.col = "gray")
+							}
+							if (!is.null(opt$file_locus)) {
+								kpPlotRegions(kp_multi, GRanges_locus, col="#7c7c7c", border="#000000", r0=-0.2, r1=-0.25, clipping = TRUE)
+							}
+							# PRINT LOCI
+							if (!is.null(opt$file_locus)) {
+								kpPlotMarkers(kp_multi, data=GRanges_locus, text.orientation = "horizontal", label.color="black", labels=names_markers, r0=0, r1=-0.4, marker.parts=c(0,00,0), cex=0.4, adjust.label.position = FALSE)
+							}
+							first_multi <- FALSE
+						}
+						
+						if (metadata$Library[library] %in% array_multi){
+
+							if (length(custom.frequency.minus) > 0){
+								kpPlotCoverage(kp_multi, data=custom.frequency.minus, r0=start_coverage_multi+size_by_library_for_one_side_coverage-0.0001, r1=start_coverage_multi, ymax=opt$max_y*1000, col="#eb0c0c", clipping=FALSE, show.0.cov=FALSE)
+							}
+							if (length(custom.frequency.plus) > 0){
+								kpPlotCoverage(kp_multi, data=custom.frequency.plus, r0=start_coverage_multi+size_by_library_for_one_side_coverage+0.0001, r1=start_coverage_multi+size_by_library_for_one_side_coverage*2, ymax=opt$max_y*1000, col="#20eb0d", clipping=FALSE, show.0.cov=FALSE)
+							}
+
+							if (!is.null(opt$max_y)){
+								kpAxis(kp_multi, labels = c(paste0(round(opt$max_y, 2),"%"), paste0(round(opt$max_y/2, 2),"%"), paste0(0,"%"), paste0(round(opt$max_y/2, 2),"%"), paste0(round(opt$max_y, 2),"%")), numticks=5, r0=start_coverage_multi, r1=start_coverage_multi + size_by_library_for_one_side_coverage*2, cex=0.3, side=1)
+							}
+
+							kpAddLabels(kp_multi, labels=metadata$Description[library], r0=start_coverage_multi, r1=start_coverage_multi + size_by_library_for_one_side_coverage*2, cex=0.3, label.margin=0.04)
+
+							start_coverage_multi <- start_coverage_multi + size_by_library_for_one_side_coverage*2 + between_size
+
+						}
+					}
+				}
 			}
 		}
 	}
 }
+# CLOSE THE GRAPHIC DEVICE AND CLEAR MEMORY
+dev.off()

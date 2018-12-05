@@ -387,7 +387,7 @@ def main(argv):
                         for key, value in chromLengthStrictBinPlus[row['Rname']].items():
                             # print(row['Junction'])
                             # print(str(key))
-                            if int(row['Junction']) <= key and int(row['Junction']) > (key - size_pool):
+                            if int(row['Junction']) < key and int(row['Junction']) >= (key - size_pool):
                                 chromLengthStrictBinPlus[row['Rname']][key] += 1
                                 break
                 else:
@@ -395,7 +395,7 @@ def main(argv):
                         for key, value in chromLengthStrictBinMinus[row['Rname']].items():
                             # print(row['Junction'])
                             # print(str(key))
-                            if int(row['Junction']) <= key and int(row['Junction']) > (key - size_pool):
+                            if int(row['Junction']) < key and int(row['Junction']) >= (key - size_pool):
                                 chromLengthStrictBinMinus[row['Rname']][key] += 1
                                 break
 
@@ -447,33 +447,52 @@ def main(argv):
             Strand_list = []
             dfKaryoFreq = pd.DataFrame(columns=['Rname', 'Rstart', 'Rend', 'Data', 'Strand'])
             for key, value in chromLengthStrictBinPlus.items():
+                last_item_key = next(reversed(value))
                 for key_inside, value_inside in value.items():
                     if key_inside - size_pool <= 0:
                         Rname_list.append(key)
                         Rstart_list.append(1)
-                        Rend_list.append(key_inside)
+                        Rend_list.append(int(key_inside)-1)
                         Data_list.append(value_inside)
                         Strand_list.append("+")
                     else:
-                        Rname_list.append(key)
-                        Rstart_list.append(int(key_inside - (size_pool - 1)))
-                        Rend_list.append(key_inside)
-                        Data_list.append(value_inside)
-                        Strand_list.append("+")
+                        if key_inside != last_item_key:
+                            Rname_list.append(key)
+                            Rstart_list.append(int(key_inside - size_pool))
+                            Rend_list.append(int(key_inside)-1)
+                            Data_list.append(value_inside)
+                            Strand_list.append("+")
+                        else:
+                            Rname_list.append(key)
+                            Rstart_list.append(int(previous_item))
+                            Rend_list.append(int(key_inside))
+                            Data_list.append(value_inside)
+                            Strand_list.append("+")
+                        previous_item = key_inside
+
             for key, value in chromLengthStrictBinMinus.items():
+                last_item_key = next(reversed(value))
                 for key_inside, value_inside in value.items():
                     if key_inside - size_pool <= 0:
                         Rname_list.append(key)
                         Rstart_list.append(1)
-                        Rend_list.append(key_inside)
+                        Rend_list.append(int(key_inside)-1)
                         Data_list.append(value_inside)
                         Strand_list.append("-")
                     else:
-                        Rname_list.append(key)
-                        Rstart_list.append(int(key_inside - (size_pool - 1)))
-                        Rend_list.append(key_inside)
-                        Data_list.append(value_inside)
-                        Strand_list.append("-")
+                        if key_inside != last_item_key:
+                            Rname_list.append(key)
+                            Rstart_list.append(int(key_inside - size_pool))
+                            Rend_list.append(int(key_inside)-1)
+                            Data_list.append(value_inside)
+                            Strand_list.append("-")
+                        else:
+                            Rname_list.append(key)
+                            Rstart_list.append(int(previous_item))
+                            Rend_list.append(int(key_inside))
+                            Data_list.append(value_inside)
+                            Strand_list.append("-")
+                        previous_item = key_inside
 
             dfKaryoFreq = pd.DataFrame({'Rname': pd.Series(Rname_list, dtype=str), 'Rstart': pd.Series(
                 Rstart_list, dtype=int), 'Rend': pd.Series(Rend_list, dtype=int), 'Data': pd.Series(Data_list, dtype=float), 'Strand': pd.Series(Strand_list, dtype=str)})

@@ -1651,19 +1651,15 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 				}
 
 				# ADAPT THE SCALE TO SOMETHING RELEVANT, NOT 8.23, BETTER 10
-				max_y <- 10^nchar(trunc(max_y))
+				max_y <- ceiling(max_y)
 
 				if (length(custom.frequency.minus) > 0){
-					#kpPlotCoverage(kp_histo, data=custom.frequency.minus, r0=0.50, r1=0.05, col="#eb0c0c",ymax=15000, clipping=FALSE, show.0.cov=FALSE)
-					kpPlotCoverage(kp_histo, data=custom.frequency.minus, r0=0.3499, r1=-0.15, ymax=max_y*1000, col="#eb0c0c", clipping=FALSE, show.0.cov=FALSE)
-					#kpPlotCoverage(kp_histo, data.panel = 2, data=custom.frequency.minus, r0=-0.10, r1=0.60, ymax=max_y*1000, col="#eb0c0c", clipping=FALSE, show.0.cov=FALSE)
+					kpPlotCoverage(kp_histo, data=custom.frequency.minus, r0=0.3485, r1=-0.15, ymax=max_y*1000, col="#eb0c0c", clipping=FALSE, show.0.cov=FALSE)
 
 
 				}
 				if (length(custom.frequency.plus) > 0){
-					#kpPlotCoverage(kp_histo, data=custom.frequency.plus, r0=0.505, r1=0.955, col="#20eb0d",ymax=15000, clipping=FALSE, show.0.cov=FALSE)
-					kpPlotCoverage(kp_histo, data=custom.frequency.plus, r0=0.3501, r1=0.85, ymax=max_y*1000, col="#20eb0d", clipping=FALSE, show.0.cov=FALSE)
-					#kpPlotCoverage(kp_histo, data.panel = 1, data=custom.frequency.plus, r0=-0.10, r1=0.60, ymax=max_y*1000, col="#20eb0d", clipping=FALSE, show.0.cov=FALSE)
+					kpPlotCoverage(kp_histo, data=custom.frequency.plus, r0=0.3515, r1=0.85, ymax=max_y*1000, col="#20eb0d", clipping=FALSE, show.0.cov=FALSE)
 				}
 
 				# ADD TICK MARKERS IF NOT ZOOM IN AND SOLO CUSTOM GENOME
@@ -1672,7 +1668,6 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 					kpAddBaseNumbers(kp_histo, tick.dist = metric, tick.len = 15, tick.col="red", cex=0.4, minor.tick.dist = metric/10, minor.tick.len = 5, minor.tick.col = "gray")
 				}
 				if (!is.null(opt$file_locus)) {
-					#kpPlotRegions(kp_histo, toGRanges(df_locus), col="#7c7c7c", border="#000000", r0=0, r1=-0.05)
 					kpPlotRegions(kp_histo, GRanges_locus, col="#7c7c7c", border="#000000", r0=-0.2, r1=-0.25, clipping = TRUE)
 				}
 				# PRINT LOCI
@@ -1682,8 +1677,6 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 
 				if (!is.null(max_y)){
 					kpAxis(kp_histo, labels = c(paste0(round(max_y, 2),"%"), paste0(round(max_y/2+max_y/4, 2),"%"), paste0(round(max_y/2, 2),"%"), paste0(round(max_y/4, 2),"%"), paste0(0,"%"), paste0(round(max_y/4, 2),"%"), paste0(round(max_y/2, 2),"%"), paste0(round(max_y/4+max_y/2, 2),"%"), paste0(round(max_y, 2),"%")), numticks=9, r0=-0.15, r1=0.85, cex=0.5, side=1)
-				#	kpAxis(kp_histo, data.panel = 1, labels = c(paste0(0,"%"), paste0(round(max_y/4, 2),"%"), paste0(round(max_y/2, 2),"%"), paste0(round(max_y/4+max_y/2, 2),"%"), paste0(round(max_y, 2),"%")), numticks=5, r0=-0.1, r1=0.60, cex=0.5)
-				#	kpAxis(kp_histo, data.panel = 2, labels = c(paste0(0,"%"), paste0(round(max_y/4, 2),"%"), paste0(round(max_y/2, 2),"%"), paste0(round(max_y/4+max_y/2, 2),"%"), paste0(round(max_y, 2),"%")), numticks=5, r0=-0.1, r1=0.60, cex=0.5)
 				}
 				# CLOSE THE GRAPHIC DEVICE AND CLEAR MEMORY
 				dev.off()
@@ -1713,17 +1706,17 @@ for(library in 1:nrow(metadata[,1,drop=FALSE])){
 						if (metadata$Library[library] %in% array_multi){
 
 							if (length(custom.frequency.minus) > 0){
-								kpPlotCoverage(kp_multi, data=custom.frequency.minus, r0=start_coverage_multi+size_by_library_for_one_side_coverage-0.0001, r1=start_coverage_multi, ymax=opt$max_y*1000, col="#eb0c0c", clipping=FALSE, show.0.cov=FALSE)
+								kpPlotCoverage(kp_multi, data=custom.frequency.minus, r0=start_coverage_multi+size_by_library_for_one_side_coverage-0.0015, r1=start_coverage_multi, ymax=opt$max_y*1000, col="#eb0c0c", clipping=FALSE, show.0.cov=FALSE)
 							}
 							if (length(custom.frequency.plus) > 0){
-								kpPlotCoverage(kp_multi, data=custom.frequency.plus, r0=start_coverage_multi+size_by_library_for_one_side_coverage+0.0001, r1=start_coverage_multi+size_by_library_for_one_side_coverage*2, ymax=opt$max_y*1000, col="#20eb0d", clipping=FALSE, show.0.cov=FALSE)
+								kpPlotCoverage(kp_multi, data=custom.frequency.plus, r0=start_coverage_multi+size_by_library_for_one_side_coverage+0.0015, r1=start_coverage_multi+size_by_library_for_one_side_coverage*2, ymax=opt$max_y*1000, col="#20eb0d", clipping=FALSE, show.0.cov=FALSE)
 							}
 
 							if (!is.null(opt$max_y)){
 								kpAxis(kp_multi, labels = c(paste0(round(opt$max_y, 2),"%"), paste0(round(opt$max_y/2, 2),"%"), paste0(0,"%"), paste0(round(opt$max_y/2, 2),"%"), paste0(round(opt$max_y, 2),"%")), numticks=5, r0=start_coverage_multi, r1=start_coverage_multi + size_by_library_for_one_side_coverage*2, cex=0.3, side=1)
 							}
 
-							kpAddLabels(kp_multi, labels=metadata$Description[library], r0=start_coverage_multi, r1=start_coverage_multi + size_by_library_for_one_side_coverage*2, cex=0.3, label.margin=0.04)
+							kpAddLabels(kp_multi, labels=metadata$Description[library], r0=start_coverage_multi, r1=start_coverage_multi + size_by_library_for_one_side_coverage*2, cex=0.2, label.margin=0.04)
 
 							start_coverage_multi <- start_coverage_multi + size_by_library_for_one_side_coverage*2 + between_size
 

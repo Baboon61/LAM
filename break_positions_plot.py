@@ -27,7 +27,7 @@ from matplotlib.ticker import MultipleLocator
 def usage():
     print('Usage:\n')
     print('\tpython ' +
-          sys.argv[0] + ' -m <metadata file> -g <genome type> -p <postprocess directory> -o <output_mark> -e <method type> [-i <mark input> -w <libraries>]')
+          sys.argv[0] + ' -m <metadata file> -g <genome type> -p <postprocess directory> -o <output_mark> -e <method type> [-i <mark input> -w <libraries> -t <type>]')
     print('\t\t-h or --help : display this help')
     print('\t\t-m or --file_metadata : metadata file')
     print('\t\t-g or --genome : only filter librairies results with this genome')
@@ -36,6 +36,7 @@ def usage():
     print('\t\t-e (0,1) or --method (0,1) : 0 = output picture using counts, 1 = output picture using log2(counts)')
     print('\t\t-i or --input_mark : mark from input file')
     print('\t\t-w or --libraries : library to display in the break poitions visualization, separated by comma (in the input order) (Default : all)')
+    print('\t\t-t or --type : only display one type of junction : legitimate or illegitimate (Default : all)')
 
 ##############################FUNCTIONS##############################
 
@@ -74,6 +75,7 @@ def main(argv):
     file_output_extension = ""
     title_label = ""
     libraries = 'all'
+    type_junction = 'all'
 
     good_directory_list = []
     check_result_tlx = False
@@ -83,8 +85,8 @@ def main(argv):
     #pd.options.mode.chained_assignment = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'm:g:p:o:e:i:w:', [
-                                   'file_metadata=', 'genome=', 'dir_post=', 'output_mark=', 'method=', 'input_mark=', 'libraries=', 'help'])
+        opts, args = getopt.getopt(sys.argv[1:], 'm:g:p:o:e:i:w:t:', [
+                                   'file_metadata=', 'genome=', 'dir_post=', 'output_mark=', 'method=', 'input_mark=', 'libraries=', 'type_junction=', 'help'])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -110,6 +112,8 @@ def main(argv):
             input_mark = arg
         elif opt in ('-w', '--libraries'):
             libraries = arg
+        elif opt in ('-t', '--type_junction'):
+            type_junction = arg
         else:
             print("Error : Bad option -> " + opt)
             usage()
@@ -203,6 +207,11 @@ def main(argv):
                 print(
                     "Warning : {" + library + "} will not be used !")
 
+    if type_junction != 'all' and type_junction != 'legitimate' and type_junction != 'illegitimate':
+        print("Error : Type junction only stand for all, legitimate or illegitimate value !\n")
+        usage()
+        sys.exit(2)
+
     # SELECT OUTPUT FILES
     if file_input_extension != "":
         file_output_extension = file_input_extension[
@@ -218,6 +227,7 @@ def main(argv):
     print('Postprocess directory : ' + dir_post)
     print('Method : ' + str(method))
     print('Libraries : ' + libraries)
+    print('Type junction : ' + type_junction)
     print('Input file extension: ' + file_input_extension)
     print('Output file extension : ' + file_output_extension)
     print('-----------------------------------------\n')
@@ -271,9 +281,9 @@ def main(argv):
 
     metadata_sort = pd.DataFrame(columns=list(metadata.columns.values))
     for i in array_libraries:
-    	for index, row in metadata.iterrows():
-    		if i == row['Library']:
-    			metadata_sort = metadata_sort.append(row)
+        for index, row in metadata.iterrows():
+            if i == row['Library']:
+                metadata_sort = metadata_sort.append(row)
     metadata = metadata_sort
     #metadata = metadata.sort_values(['Library'], ascending=[True])
 
@@ -293,10 +303,11 @@ def main(argv):
 
         yrange.append(((track_number * 1.8) + (track_number *
                                                1.8) + 1.8 + coff_leg_ille_graph, 1))
-        yrange.append(((track_number * 1.8) + (track_number *
+        if type_junction == 'all':
+        	yrange.append(((track_number * 1.8) + (track_number *
                                                1.8) + 3.6 + coff_leg_ille_graph, 1))
 
-        coff_leg_ille_graph += 1
+        	coff_leg_ille_graph += 1
 
         # DICTIONNARY LABEL INSIDE ILLEGITIMATES AND LEGITIMATES DICTIONNARIES
         distance_dict["illegitimates"][label] = {}
@@ -443,27 +454,56 @@ def main(argv):
         # print(colors)
         # print(type(colors))
 
-        # LEGITIMATE DISPLAY
-        coll = BrokenBarHCollection(
-            xranges_leg, yrange[yrange_count], facecolors=colors_leg, edgecolors=colors_leg)
-        ax.add_collection(coll)
-        center = yrange[yrange_count][0] + yrange[yrange_count][1] / 2.0
-        yticks.append(center)
-        yticklabels.append(label + "_legi")
-        d[label + "legi"] = xranges_leg
+        if type_junction == 'all':
 
-        yrange_count += 1
+            # LEGITIMATE DISPLAY
+            coll = BrokenBarHCollection(
+                xranges_leg, yrange[yrange_count], facecolors=colors_leg, edgecolors=colors_leg)
+            ax.add_collection(coll)
+            center = yrange[yrange_count][0] + yrange[yrange_count][1] / 2.0
+            yticks.append(center)
+            yticklabels.append(label + "_legi")
+            d[label + "legi"] = xranges_leg
 
-        # ILLEGITIMATE DISPLAY
-        coll = BrokenBarHCollection(xranges_illeg, yrange[
-                                    yrange_count], facecolors=colors_illeg, edgecolors=colors_illeg)
-        ax.add_collection(coll)
-        center = yrange[yrange_count][0] + yrange[yrange_count][1] / 2.0
-        yticks.append(center)
-        yticklabels.append(label + "_illegi")
-        d[label + "illegi"] = xranges_illeg
+            yrange_count += 1
 
-        yrange_count += 1
+            # ILLEGITIMATE DISPLAY
+            coll = BrokenBarHCollection(xranges_illeg, yrange[
+                                        yrange_count], facecolors=colors_illeg, edgecolors=colors_illeg)
+            ax.add_collection(coll)
+            center = yrange[yrange_count][0] + yrange[yrange_count][1] / 2.0
+            yticks.append(center)
+            yticklabels.append(label + "_illegi")
+            d[label + "illegi"] = xranges_illeg
+            print(yrange)
+            yrange_count += 1
+        elif type_junction == 'legitimate':
+            # LEGITIMATE DISPLAY
+            coll = BrokenBarHCollection(
+                xranges_leg, yrange[yrange_count], facecolors=colors_leg, edgecolors=colors_leg)
+            ax.add_collection(coll)
+            center = yrange[yrange_count][0] + yrange[yrange_count][1] / 2.0
+            yticks.append(center)
+            yticklabels.append(label + "_legi")
+            d[label + "legi"] = xranges_leg
+
+            yrange_count += 1
+
+        elif type_junction == 'illegitimate':
+            # ILLEGITIMATE DISPLAY
+            coll = BrokenBarHCollection(xranges_illeg, yrange[
+                                        yrange_count], facecolors=colors_illeg, edgecolors=colors_illeg)
+            ax.add_collection(coll)
+            center = yrange[yrange_count][0] + yrange[yrange_count][1] / 2.0
+            yticks.append(center)
+            yticklabels.append(label + "_illegi")
+            d[label + "illegi"] = xranges_illeg
+            print(yrange)
+            yrange_count += 1
+        else:
+            print("Error in Type junction attribute : all, legitimate or illegitimate value !\n")
+            usage()
+            sys.exit(2)
 
     # SET UP DISPLAY BACKGROUND
     ax.axis('tight')

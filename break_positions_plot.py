@@ -27,7 +27,7 @@ from matplotlib.ticker import MultipleLocator
 def usage():
     print('Usage:\n')
     print('\tpython ' +
-          sys.argv[0] + ' -m <metadata file> -g <genome type> -p <postprocess directory> -o <output_mark> -e <method type> [-i <mark input>]')
+          sys.argv[0] + ' -m <metadata file> -g <genome type> -p <postprocess directory> -o <output_mark> -e <method type> [-i <mark input> -w <libraries>]')
     print('\t\t-h or --help : display this help')
     print('\t\t-m or --file_metadata : metadata file')
     print('\t\t-g or --genome : only filter librairies results with this genome')
@@ -35,6 +35,7 @@ def usage():
     print('\t\t-o or --output_mark : mark added to the output file')
     print('\t\t-e (0,1) or --method (0,1) : 0 = output picture using counts, 1 = output picture using log2(counts)')
     print('\t\t-i or --input_mark : mark from input file')
+    print('\t\t-w or --libraries : library to display in the break poitions visualization, separated by comma (in the input order) (Default : all)')
 
 ##############################FUNCTIONS##############################
 
@@ -72,6 +73,7 @@ def main(argv):
     file_input_extension = ""
     file_output_extension = ""
     title_label = ""
+    libraries = 'all'
 
     good_directory_list = []
     check_result_tlx = False
@@ -81,8 +83,8 @@ def main(argv):
     #pd.options.mode.chained_assignment = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'm:g:p:o:e:i:', [
-                                   'file_metadata=', 'genome=', 'dir_post=', 'output_mark=', 'method=', 'input_mark=', 'help'])
+        opts, args = getopt.getopt(sys.argv[1:], 'm:g:p:o:e:i:w:', [
+                                   'file_metadata=', 'genome=', 'dir_post=', 'output_mark=', 'method=', 'input_mark=', 'libraries=', 'help'])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -106,6 +108,8 @@ def main(argv):
             method = arg
         elif opt in ('-i', '--input_mark'):
             input_mark = arg
+        elif opt in ('-w', '--libraries'):
+            libraries = arg
         else:
             print("Error : Bad option -> " + opt)
             usage()
@@ -143,7 +147,7 @@ def main(argv):
         if dir_post[-1] != "/":
             dir_post += "/"
 
-    # C HECK METHOD
+    # CHECK METHOD
     try:
         method = int(method)
         if method == 0:
@@ -185,6 +189,20 @@ def main(argv):
         usage()
         sys.exit(2)
 
+    # CHECK LIBRARIES
+    array_libraries = []
+    if libraries == 'all':
+        array_libraries = metadata['Library'].tolist()
+    else:
+        for library in libraries.split(","):
+            if library in metadata['Library'].tolist():
+                array_libraries.append(library)
+            else:
+                print(
+                    "Warning : {" + library + "} does not exist in metadata file with this genome !")
+                print(
+                    "Warning : {" + library + "} will not be used !")
+
     # SELECT OUTPUT FILES
     if file_input_extension != "":
         file_output_extension = file_input_extension[
@@ -199,6 +217,7 @@ def main(argv):
     print('Genome : ' + genome)
     print('Postprocess directory : ' + dir_post)
     print('Method : ' + str(method))
+    print('Libraries : ' + libraries)
     print('Input file extension: ' + file_input_extension)
     print('Output file extension : ' + file_output_extension)
     print('-----------------------------------------\n')
@@ -215,7 +234,7 @@ def main(argv):
     coff_leg_ille_graph = 0
 
     # LOOP OVER EACH LIBRARIES
-    for library in metadata['Library'].tolist():
+    for library in array_libraries:
         # print(library)
         # CHECK DIRECTORY EXISTS
         if not os.path.exists(dir_post + library):
@@ -248,10 +267,19 @@ def main(argv):
                 usage()
                 sys.exit(2)
 
-    metadata = metadata.sort_values(['Library'], ascending=[True])
+    metadata = metadata[(metadata['Library'].isin(array_libraries))]
+
+    metadata_sort = pd.DataFrame(columns=list(metadata.columns.values))
+    for i in array_libraries:
+    	for index, row in metadata.iterrows():
+    		if i == row['Library']:
+    			metadata_sort = metadata_sort.append(row)
+    metadata = metadata_sort
+    #metadata = metadata.sort_values(['Library'], ascending=[True])
+
     global_list = dir_post + metadata['Library']
     # for i in global_list:
-    #	print(i)
+    #    print(i)
 
     nb_files = len(global_list)
     # DICTIONNARY WITH ILLEGITIMATES AND LEGITIMATES JUNCTIONS

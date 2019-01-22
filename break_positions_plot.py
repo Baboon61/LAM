@@ -475,7 +475,6 @@ def main(argv):
             yticks.append(center)
             yticklabels.append(label + "_illegi")
             d[label + "illegi"] = xranges_illeg
-            print(yrange)
             yrange_count += 1
         elif type_junction == 'legitimate':
             # LEGITIMATE DISPLAY
@@ -498,7 +497,6 @@ def main(argv):
             yticks.append(center)
             yticklabels.append(label + "_illegi")
             d[label + "illegi"] = xranges_illeg
-            print(yrange)
             yrange_count += 1
         else:
             print("Error in Type junction attribute : all, legitimate or illegitimate value !\n")

@@ -39,7 +39,7 @@ spec = matrix(c(
 'unlink' , 'u', 0, "logical", "unlink the bait1/prey1, bait2/prey2 process and allows to search for bait1/prey2 junctions",
 'file_rename', 'x', 2, "character", "file to rename chromosome to a better display",
 'multi', 'w', 2, "character", "library to display in the multi visualization, separated by comma (in the input order) (Default : 'all') (zoom_in mode only)",
-'max_y', 'q', 2, "integer", "Y axis maximum for multi visualization only (Default : 100) (zoom_in mode only)"
+'max_y', 'q', 2, "double", "Y axis maximum for multi visualization only (Default : 100) (zoom_in mode only)"
 ), byrow=TRUE, ncol=5)
 
 opt = getopt(spec)

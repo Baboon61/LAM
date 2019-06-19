@@ -16,7 +16,8 @@ spec = matrix(c(
 'output_mark' , 'o', 1, "character", "mark added to the output file",
 'dir_post' , 'p', 1, "character", "postprocess directory",
 'file_cytoband' , 'y', 1, "character", "the cytoband file corresponding to your genome",
-'input_mark' , 'i', 2, "character", "marks from input file"
+'input_mark' , 'i', 2, "character", "marks from input file",
+'max_histo', 'q', 2, "double", "histogram maximum value (Default : 100)"
 ), byrow=TRUE, ncol=5)
 
 opt = getopt(spec)
@@ -41,7 +42,7 @@ if ( is.null(opt$output_mark ) ) { write("Error : -o|--output_mark option can no
 if ( is.null(opt$dir_post ) ) { write("Error : -p|--dir_post option can not be null",stderr()); write("\n",stderr()); cat(getopt(spec, usage=TRUE)); q(status=1) }
 if ( is.null(opt$file_cytoband ) ) { write("Error : -y|--file_cytoband option can not be null",stderr()); write("\n",stderr()); cat(getopt(spec, usage=TRUE)); q(status=1) }
 if ( is.null(opt$input_mark ) ) { write("Warning : You will process the raw file !",stderr()); opt$input_mark = "" }
-
+if ( is.null(opt$max_histo ) ) { opt$max_histo = 100 }
 
 # CHECK METADATA FILE
 if (file.exists(opt$file_metadata)){
@@ -175,7 +176,7 @@ for(i in 1:nrow(metadata[1])){
 			RCircos.Chromosome.Ideogram.Plot();
 
 			# HISTOGRAM PLOT
-			RCircos.Histogram.Plot(hist.data=histo, data.col=4, track.num=1, side="in", min.value=0, max.value=100);
+			RCircos.Histogram.Plot(hist.data=histo, data.col=4, track.num=1, side="in", min.value=0, max.value=opt$max_histo);
 
 			# LINK LINES. LINK DATA HAS ONLY PAIRED CHROMOSOME LOCATIONS IN EACH ROW AND LINK LINES ARE ALWAYS DRAWN INSIDE OF CHROMOSOME IDEOGRAM
 			RCircos.Link.Plot(link.data=link, track.num=2, by.chromosome=TRUE);
